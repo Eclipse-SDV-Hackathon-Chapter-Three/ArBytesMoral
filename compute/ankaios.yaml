@@ -1,0 +1,15 @@
+apiVersion: v0.1
+workloads:
+  databroker:
+    runtime: podman
+    agent: agent_compute
+    runtimeConfig: |
+      image: ghcr.io/eclipse-kuksa/kuksa-databroker:main
+      commandArgs: ["--insecure"]
+      commandOptions: ["--net=host"]
+  mqtt:
+    runtime: podman
+    agent: agent_compute
+    runtimeConfig: |
+      image: docker.io/library/eclipse-mosquitto
+      commandOptions: ["--net=host", "-v", "/home/chris/hackathon2025/ArBytesMoral/compute/mosquitto/config:/mosquitto/config"]
