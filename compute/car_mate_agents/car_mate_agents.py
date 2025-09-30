@@ -15,6 +15,7 @@ SPDX-License-Identifier: Apache-2.0
 import asyncio
 import time
 
+from uprotocol.communication.inmemoryrpcclient import InMemoryRpcClient
 from uprotocol.communication.inmemoryrpcserver import InMemoryRpcServer
 from uprotocol.communication.requesthandler import RequestHandler
 from uprotocol.communication.upayload import UPayload
@@ -35,15 +36,11 @@ client = OpenAI(
   api_key=""
 )
 
+command_urri = UUri(authority_name="voicecommand", ue_id=18)
+command_transport = UPTransportZenoh.new(get_zenoh_default_config(), command_urri)
 
-
-
-
-source = UUri(authority_name="command", ue_id=18)
-transport = UPTransportZenoh.new(get_zenoh_default_config(), source)
-
-
-
+answer_source = UUri(authority_name="voiceanswer", ue_id=18)
+answer_transport = UPTransportZenoh.new(get_zenoh_default_config(), answer_source)
 
 class MyRequestHandler(RequestHandler):
     async def handle_request(self, msg: UMessage) -> UPayload:
@@ -54,32 +51,40 @@ class MyRequestHandler(RequestHandler):
         sink = attributes.sink
         common_uuri.logging.debug(f"Receive {payload} from {source} to {sink}")
 
+        await self.process_command(payload)
+
+        payload = UPayload(data="command received", format=UPayloadFormat.UPAYLOAD_FORMAT_TEXT)
+        return payload
+
+    async def rpc_request_answer(self, answer):
+        # create uuri
+        uuri = create_method_uri()
+        # create UPayload
+        payload = UPayload(format=UPayloadFormat.UPAYLOAD_FORMAT_TEXT, data=bytes([ord(c) for c in answer]))
+        # invoke RPC method
+        common_uuri.logging.debug(f"Send request to {uuri}")
+        rpc_client = InMemoryRpcClient(answer_transport)
+        response_payload = await rpc_client.invoke_method(uuri, payload)
+        return response_payload
+   
+    async def process_command(self, command):
         answer = client.responses.create(
         model="gpt-4o-mini",
-        input=payload,
+        input=command,
         store=True,
         )
 
-        # answer = "test answer"
+        output_text = await answer.output_text()
+        return await self.rpc_request_answer(output_text)
 
-        common_uuri.logging.debug(f"AI Answer {answer.output_text}")
-
-        print(answer.output_text)
-
-
-        payload = UPayload(data=bytes([ord(c) for c in answer.output_text]), format=UPayloadFormat.UPAYLOAD_FORMAT_TEXT)
-        return payload
-
-
-async def register_rpc():
+async def register_command_rpc():
     uuri = create_method_uri()
-    rpc_server = InMemoryRpcServer(transport)
+    rpc_server = InMemoryRpcServer(command_transport)
     status = await rpc_server.register_request_handler(uuri, MyRequestHandler())
     common_uuri.logging.debug(f"Request Handler Register status {status}")
 
     while True:
         time.sleep(1)
 
-
 if __name__ == '__main__':
-    asyncio.run(register_rpc())
+    asyncio.run(register_command_rpc())
