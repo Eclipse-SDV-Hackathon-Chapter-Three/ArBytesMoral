@@ -56,23 +56,53 @@ In short, CarMate creates a safer, more social, and enjoyable driving experience
 
 ### Technical View
 
-
+![Overall System Architecture](img/SolutionIdeaTechnicalViewpoint.png)
 
 ---
 
 # 2. How Do You Work
 
 ## Development Process  
-*Brief overview of your development process.*
+Our development process is structured into five distinct phases to ensure clarity, focus, and adaptability during the hackathon:
+
+Phase 0: Ideation and Goal Setting
+We begin as a whole group to brainstorm and define the core idea and the goal we want to achieve as a team during the hackathon.
+
+Phase 1: Risk Identification and Initial Exploration
+Potential risks, such as unfamiliar technologies or tools, are identified. To mitigate these risks, we conduct a short spike to explore and assess the unknown and risky aspects of the project.
+
+Phase 2: Solution Design
+Using the knowledge gained from the spike, we develop a system architecture diagram and a clear solution proposal to align the team on the technical approach.
+
+Phase 3: Task Distribution and Iterative Development
+Tasks are divided into manageable subtasks and distributed among team members as described in the Planning & Tracking section. The primary objective is to deliver a minimal, functional solution that can be incrementally extended as the hackathon progresses.
+
+Phase 4: Pitch Preparation
+The final phase focuses on preparing a polished and compelling pitch to present our solution effectively to the jury.
 
 ### Planning & Tracking  
-*How do you plan and track progress?*
+
+Tasks are documented on Post-Its and assigned to team members.
+During our regular group meetings (see Communication), current tasks are discussed, tracked, and redistributed as needed, with specific target deadlines being established.
+If there are deviations from the schedule, we adjust by reprioritizing tasks, simplifying complex deliverables, or expanding scope depending on the context and necessity.
 
 ### Quality Assurance  
-*How do you ensure quality (e.g., testing, documentation, code reviews)?*
+To ensure quality throughout the development process during the hackathon, we follow these principles:
+
+Code-First Development and Early Integration:
+We prioritize coding and integrating early to avoid last-minute incompatibilities and minimize time spent on non-functional parts. This ensures that progress is immediately tangible and functional.
+
+Minimal and Necessary Documentation:
+Essential documentation is added to the corresponding README.md files within the related folders. This keeps documentation concise and focused on usability and clarity.
+
+Feature Branch Workflow with Quick Reviews:
+Development is conducted on feature branches, and all changes are reviewed using the 4-eyes principle (peer review by at least one other team member) to quickly maintain code quality and catch potential issues early.
 
 ## Communication  
-*How does your team communicate?*
+
+We hold regular group meetings (approximately every 1-2 hours) to align on the current status of tasks and progress (Huddle Meetings).
+Additionally, on-demand 1:1 discussions are initiated whenever necessary to resolve specific issues or clarify questions efficiently.
 
 ## Decision Making  
-*How are decisions made in your team?*
+
+Our team strives to achieve decisions through consensus, ensuring that all voices are heard and a common agreement is reached. However, if consensus cannot be achieved within the limited time available, we resolve decisions through a democratic vote.
