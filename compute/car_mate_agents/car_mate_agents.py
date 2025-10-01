@@ -1,19 +1,4 @@
-"""
-SPDX-FileCopyrightText: 2024 Contributors to the Eclipse Foundation
-
-See the NOTICE file(s) distributed with this work for additional
-information regarding copyright ownership.
-
-This program and the accompanying materials are made available under the
-terms of the Apache License Version 2.0 which is available at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-SPDX-License-Identifier: Apache-2.0
-"""
-
 import asyncio
-import os
 import threading
 from agents import Agent, Runner
 
@@ -28,7 +13,8 @@ from up_transport_zenoh.examples import common_uuri
 from up_transport_zenoh.examples.common_uuri import create_method_uri, get_zenoh_default_config
 from up_transport_zenoh.uptransportzenoh import UPTransportZenoh
 
-source = UUri(authority_name="command", ue_id=18)
+
+source = UUri(authority_name="voice-command", ue_id=18)
 transport = UPTransportZenoh.new(get_zenoh_default_config(), source)
 
 # Initialize the OpenAI Agent
@@ -41,12 +27,10 @@ agent = Agent(
 
 class MyRequestHandler(RequestHandler):
     def handle_request(self, msg: UMessage) -> UPayload:
-        common_uuri.logging.debug("Request Received by Service Request Handler")
-        attributes = msg.attributes
         payload = msg.payload
         
-        request_text = payload.decode('utf-8') if payload else ""
-        common_uuri.logging.debug(f"Receive '{request_text}'")
+        voice_command = payload.decode('utf-8') if payload else ""
+        common_uuri.logging.debug(f"Received '{voice_command}'")
         
         try:
             # Run the agent in a separate thread to avoid event loop conflict
@@ -54,18 +38,17 @@ class MyRequestHandler(RequestHandler):
             
             def run_agent():
                 # Create a new event loop for this thread
-                agent_result = asyncio.run(Runner.run(agent, request_text))
+                agent_result = asyncio.run(Runner.run(agent, voice_command))
                 result.append(agent_result.final_output)
             
             thread = threading.Thread(target=run_agent)
             thread.start()
             thread.join()  # Wait for completion
             
-            response_text = result[0]
-            common_uuri.logging.debug(f"Agent response: {response_text}")
+            voice_answer = result[0]
             
             return UPayload(
-                data=response_text.encode('utf-8'),
+                data=voice_answer.encode('utf-8'),
                 format=UPayloadFormat.UPAYLOAD_FORMAT_TEXT
             )
             
