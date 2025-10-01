@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Voice Demo – STT & TTS (Python-Backend)</title>
+  <title>CarByte CarMate</title>
   <style>
     :root {
       font-family: system-ui, sans-serif;
@@ -14,10 +14,49 @@
       margin: 2rem;
     }
 
-    .row {
+    .card-container {
       display: flex;
       gap: 1rem;
-      flex-wrap: wrap;
+      flex-wrap: wrap; /* wrap on smaller screens */
+    }
+
+    .card {
+      flex: 1 1 40%;
+      min-width: 300px;
+      border: 1px solid #e5e7eb;
+      border-radius: .8rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
+      box-sizing: border-box;
+    }
+
+    /* The image column - 15% width fixed basis */
+    .image-column {
+      flex: 0 0 15%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-width: 100px;
+      margin-bottom: 1rem;
+    }
+
+    .image-column img {
+      width: auto;
+      height: 50px;
+      max-width: 100%;
+      display: block;
+    }
+
+    .small {
+      color: #6b7280;
+      font-size: .9rem;
+    }
+
+    .status {
+      margin: .5rem 0;
+      font-size: .95rem;
+      color: #374151;
     }
 
     button {
@@ -33,30 +72,12 @@
     }
 
     textarea {
-      width: 100%;
+      width: 95%;
       min-height: 120px;
       padding: .6rem;
       border-radius: .6rem;
       border: 1px solid #ccc;
-    }
-
-    .card {
-      border: 1px solid #e5e7eb;
-      border-radius: .8rem;
-      padding: 1rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, .05);
-    }
-
-    .small {
-      color: #6b7280;
-      font-size: .9rem;
-    }
-
-    .status {
-      margin: .5rem 0;
-      font-size: .95rem;
-      color: #374151;
+      box-sizing: border-box;
     }
 
     audio {
@@ -67,33 +88,38 @@
 </head>
 
 <body>
-  <h1>🎙️ Speech-to-Text & 🔊 Text-to-Speech</h1>
+  <h1 style="display: flex; align-items: center; gap: 0.5rem; justify-content: center; text-align: center;">
+    <img src="static/logo.png" style="width: auto; height: 50px;" alt="Logo" />
+    CarByte CarMate
+  </h1>
+  <div class="card-container">
+    <div class="card">
+      <h2>🎙️ Ask CarMate (STT)</h2>
+      <p class="small"> Press talk to talk to your personal CarMate to <code>/stt</code>.</p>
 
-  <div class="card">
-    <h2>Speech-to-Text (STT)</h2>
-    <p class="small">Press „Record“, talk, then „Stop &amp; Transcribe. The recording will be sent as WAV (mono, 16 kHz)
-      to <code>/stt</code>.</p>
+      <div class="row">
+        <button id="btnStart">🎙️ talk</button>
+        <button id="btnStop" disabled>⏹️ stop </button>
+      </div>
+      <div id="sttStatus" class="status"></div>
+      <audio id="sttPlayback" controls></audio>
+      <label class="small"><input type="checkbox" id="playbackToggle" /> Play own Recording</label>
 
-    <div class="row">
-      <button id="btnStart">🎙️ Start Recording</button>
-      <button id="btnStop" disabled>⏹️ Stop &amp; Transcribing</button>
+      <h3>Your Input</h3>
+      <textarea id="sttResult" placeholder="Your audio will be shown here" readonly></textarea>
     </div>
-    <div id="sttStatus" class="status"></div>
-    <audio id="sttPlayback" controls></audio>
-    <label class="small"><input type="checkbox" id="playbackToggle" checked /> Play own Recording</label>
 
-    <h3>Result</h3>
-    <textarea id="sttResult" placeholder="The transcript will be shown here…" readonly></textarea>
+    <div class="image-column">
+      <img src="static/mate.png" alt="Mate" style="width: auto; height: auto;">
+    </div>
+
+    <div class="card">
+      <h2>🔊 CarMate Response (TTS)</h2>
+      <textarea id="ttsInput" placeholder="Waiting for answer from CarMate"></textarea>
+      <div id="ttsStatus" class="status"></div>
+      <audio id="ttsAudio" controls></audio>
+    </div>
   </div>
-
-  <div class="card">
-    <h2>Text-to-Speech (TTS)</h2>
-    <p class="small">Type in your text - it will be synthesized.</p>
-    <textarea id="ttsInput" placeholder="Type in your text - it will be synthesized …">Hello from Python TTS!</textarea>
-    <div id="ttsStatus" class="status"></div>
-    <audio id="ttsAudio" controls></audio>
-  </div>
-
   <script>
     (() => {
       // ======== WAV-Encoder (PCM 16-bit, mono, 16kHz) ========
@@ -311,7 +337,6 @@
             const blob = await res.blob();
             ttsAudio.src = URL.createObjectURL(blob);
             await ttsAudio.play().catch(() => { });
-            ttsStatus.textContent = 'Done ✅';
           }
         } catch (e) {
           console.error(e);
