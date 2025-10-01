@@ -1,76 +1,109 @@
-import speech_recognition as sr
-import pyttsx3
-import time
+# app.py
+# Full Flask app providing Speech-to-Text (STT) and fast Text-to-Speech (TTS).
+# - STT: accepts WAV uploads from the browser and transcribes with SpeechRecognition (Google Web Speech API).
+# - TTS: super fast on Linux using the native `espeak` CLI (WAV on stdout). Falls back to pyttsx3 on non-Linux or if espeak is unavailable.
 
-# --- Webserver: Flask-Endpunkte für STT/TTS ---
-from flask import Flask, request, send_file, jsonify
-from datetime import datetime
 import io
-import wave
 import os
 import tempfile
-
 import platform
+import subprocess
+from functools import lru_cache
 
-_engine = None
+from flask import Flask, request, send_file, jsonify
+import speech_recognition as sr
 
-def get_tts_engine():
-    global _engine
-    if _engine is not None:
-        return _engine
-    try:
-        # unter Linux explizit den espeak-Treiber versuchen
-        if platform.system().lower() == "linux":
-            _engine = pyttsx3.init(driverName="espeak")
-        else:
-            _engine = pyttsx3.init()  # macOS: nsss, Windows: sapi5
-        _engine.setProperty('rate', 150)
-        _engine.setProperty('volume', 1.0)
-        return _engine
-    except OSError as e:
-        # typisch: libespeak.so.1 fehlt
-        raise RuntimeError(
-            "TTS-Engine konnte nicht initialisiert werden. "
-            "Unter Linux bitte 'espeak' und 'libespeak1' installieren. "
-            f"Systemfehler: {e}"
-        )
-
-# Initialize Speech-to-Text
+# -----------------------------
+# Global recognizer (STT)
+# -----------------------------
 r = sr.Recognizer()
-mic_index = 2  # your headset microphone index
 
-def listen_for_command():
-    """Listen for a command after the hotword"""
-    with sr.Microphone(device_index=mic_index) as source:
-        print("Speak your command …")
-        audio = r.listen(source)
-        try:
-            command = r.recognize_google(audio, language="en-US")
-            print("Recognized:", command)
-            return command
-        except sr.UnknownValueError:
-            print("❌ Could not understand audio.")
-            engine.say("Sorry, I did not understand you.")
-            engine.runAndWait()
-        except sr.RequestError as e:
-            print(f"❌ API error: {e}")
-            engine.say("There was an error processing your request.")
-            engine.runAndWait()
-    return None
-
+# -----------------------------
+# App (serves static/index.html)
+# -----------------------------
 app = Flask(__name__, static_url_path="/static", static_folder="static")
 
+
+# -----------------------------
+# Helper: platform checks
+# -----------------------------
+def _is_linux() -> bool:
+    return platform.system().lower() == "linux"
+
+
+# -----------------------------
+# TTS via espeak (Linux) – FAST
+# Returns WAV bytes directly from espeak --stdout
+# -----------------------------
+@lru_cache(maxsize=64)
+def _espeak_tts_bytes_cached(text: str, voice: str = "en-us", rate: int = 150) -> bytes:
+    """
+    Render TTS using espeak CLI and return WAV bytes.
+    This is very fast and avoids filesystem I/O.
+    """
+    cmd = ["espeak", "-v", voice, "-s", str(rate), "--stdout", text]
+    try:
+        res = subprocess.run(
+            cmd,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=10,  # keep short to avoid long hangs
+        )
+        return res.stdout
+    except FileNotFoundError:
+        # espeak not installed / not in PATH
+        raise RuntimeError("espeak is not installed or not found in PATH.")
+    except subprocess.TimeoutExpired:
+        raise RuntimeError("TTS timeout (espeak) – text too long or system busy?")
+    except subprocess.CalledProcessError as e:
+        msg = e.stderr.decode(errors="ignore")[:200]
+        raise RuntimeError(f"TTS failed (espeak): {msg}")
+
+
+# -----------------------------
+# TTS fallback: pyttsx3 (cross-platform)
+# Lazily initialized to avoid import/driver overhead at startup.
+# -----------------------------
+_pyttsx3_engine = None
+
+
+def _get_pyttsx3():
+    global _pyttsx3_engine
+    import pyttsx3  # lazy import
+
+    if _pyttsx3_engine is not None:
+        return _pyttsx3_engine
+
+    try:
+        if _is_linux():
+            # On Linux explicitly try espeak driver
+            _pyttsx3_engine = pyttsx3.init(driverName="espeak")
+        else:
+            # Windows: sapi5, macOS: nsss
+            _pyttsx3_engine = pyttsx3.init()
+        _pyttsx3_engine.setProperty("rate", 150)
+        _pyttsx3_engine.setProperty("volume", 1.0)
+        return _pyttsx3_engine
+    except Exception as e:
+        raise RuntimeError(f"pyttsx3 could not be initialized: {e}")
+
+
+# -----------------------------
+# Routes
+# -----------------------------
 @app.route("/")
 def root():
-    # Liefert deine statische HTML-Seite
+    # Serves your static HTML page
     return app.send_static_file("index.html")
+
 
 @app.route("/stt", methods=["POST"])
 def stt():
     """
-    Erwartet eine Audiodatei als multipart/form-data:
+    Expects an audio file as multipart/form-data:
       field name: 'audio'
-      Format: WAV (PCM 16-bit, mono, 16kHz) – genau so erzeugt die index.html unten die Datei.
+      Format: WAV (PCM 16-bit, mono, 16 kHz) – that's what the provided index.html generates.
     """
     if "audio" not in request.files:
         return jsonify({"error": "No 'audio' file part found"}), 400
@@ -79,7 +112,7 @@ def stt():
     if f.filename == "":
         return jsonify({"error": "Empty filename"}), 400
 
-    # Datei im Speicher -> SpeechRecognition einlesen
+    # Load in-memory file into SpeechRecognition
     audio_bytes = f.read()
     audio_file = io.BytesIO(audio_bytes)
 
@@ -95,29 +128,105 @@ def stt():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @app.route("/tts", methods=["POST"])
 def tts():
+    """
+    Expects JSON: {"text": "...", "voice": "en-us", "rate": 150}
+    Returns a WAV stream.
+    On Linux: uses espeak (very fast).
+    Otherwise or if espeak is not available: falls back to pyttsx3.
+    """
     data = request.get_json(silent=True) or {}
-    text = data.get("text", "").trim() if hasattr(str, "trim") else data.get("text","").strip()
+    text = (data.get("text") or "").strip()
     if not text:
         return jsonify({"error": "No text provided"}), 400
 
+    # Input sanity limits for web usage
+    if len(text) > 2000:
+        return jsonify({"error": "Text too long (max 2000 chars)."}), 413
+
+    voice = data.get("voice", "en-us")
     try:
-        engine = get_tts_engine()
+        rate = int(data.get("rate", 150))
+    except Exception:
+        rate = 150
+
+    try:
+        if _is_linux():
+            # Primary fast path: espeak -> WAV bytes
+            wav_bytes = _espeak_tts_bytes_cached(text, voice=voice, rate=rate)
+            return send_file(
+                io.BytesIO(wav_bytes),
+                mimetype="audio/wav",
+                as_attachment=False,
+                download_name="tts.wav",
+            )
+        else:
+            # Fallback: pyttsx3 (file-based)
+            engine = _get_pyttsx3()
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
+                tmp_path = tmp.name
+            try:
+                engine.setProperty("rate", rate)
+                engine.save_to_file(text, tmp_path)
+                engine.runAndWait()
+                return send_file(
+                    tmp_path,
+                    mimetype="audio/wav",
+                    as_attachment=False,
+                    download_name="tts.wav",
+                )
+            finally:
+                try:
+                    os.remove(tmp_path)
+                except OSError:
+                    pass
+
     except RuntimeError as e:
         return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        return jsonify({"error": f"Unexpected TTS error: {e}"}), 500
 
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-        tmp_path = tmp.name
+
+# -----------------------------
+# Optional: legacy local mic command listener
+# (Not used by the web UI; kept here for reference. Uses pyttsx3 on demand.)
+# -----------------------------
+def listen_for_command(mic_index: int = 2):
+    """Listen for a command after the hotword (local machine microphone)."""
     try:
-        engine.save_to_file(text, tmp_path)
-        engine.runAndWait()
-        return send_file(tmp_path, mimetype="audio/wav", as_attachment=False, download_name="tts.wav")
-    finally:
-        try: os.remove(tmp_path)
-        except OSError: pass
+        with sr.Microphone(device_index=mic_index) as source:
+            print("Speak your command …")
+            audio = r.listen(source)
+            try:
+                command = r.recognize_google(audio, language="en-US")
+                print("Recognized:", command)
+                return command
+            except sr.UnknownValueError:
+                print("❌ Could not understand audio.")
+                try:
+                    engine = _get_pyttsx3()
+                    engine.say("Sorry, I did not understand you.")
+                    engine.runAndWait()
+                except Exception:
+                    pass
+            except sr.RequestError as e:
+                print(f"❌ API error: {e}")
+                try:
+                    engine = _get_pyttsx3()
+                    engine.say("There was an error processing your request.")
+                    engine.runAndWait()
+                except Exception:
+                    pass
+    except Exception as e:
+        print(f"Microphone error: {e}")
+    return None
 
 
+# -----------------------------
+# Main
+# -----------------------------
 if __name__ == "__main__":
-    # Anstatt der Endlos-Mikrofon-Schleife jetzt Webserver starten
+    # Start the Flask development server
     app.run(host="0.0.0.0", port=5000, debug=True)
