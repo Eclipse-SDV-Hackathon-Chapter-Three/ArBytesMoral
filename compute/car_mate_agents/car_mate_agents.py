@@ -14,7 +14,8 @@ SPDX-License-Identifier: Apache-2.0
 
 import asyncio
 import os
-from openai import OpenAI  # Use synchronous client
+import threading
+from agents import Agent, Runner
 
 from uprotocol.communication.inmemoryrpcserver import InMemoryRpcServer
 from uprotocol.communication.requesthandler import RequestHandler
@@ -27,13 +28,15 @@ from up_transport_zenoh.examples import common_uuri
 from up_transport_zenoh.examples.common_uuri import create_method_uri, get_zenoh_default_config
 from up_transport_zenoh.uptransportzenoh import UPTransportZenoh
 
-# Initialize synchronous OpenAI client
-openai_client = OpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY")
-)
-
 source = UUri(authority_name="command", ue_id=18)
 transport = UPTransportZenoh.new(get_zenoh_default_config(), source)
+
+# Initialize the OpenAI Agent
+agent = Agent(
+    name="Assistant",
+    instructions="You are a helpful assistant for vehicle-related queries. Provide clear, concise, and accurate responses.",
+    model="gpt-4o-mini"
+)
 
 
 class MyRequestHandler(RequestHandler):
@@ -41,38 +44,35 @@ class MyRequestHandler(RequestHandler):
         common_uuri.logging.debug("Request Received by Service Request Handler")
         attributes = msg.attributes
         payload = msg.payload
-        source = attributes.source
-        sink = attributes.sink
         
-        # Extract the request text
         request_text = payload.decode('utf-8') if payload else ""
-        common_uuri.logging.debug(f"Receive '{request_text}' from {source} to {sink}")
+        common_uuri.logging.debug(f"Receive '{request_text}'")
         
         try:
-            # Call OpenAI API synchronously
-            response = openai_client.chat.completions.create(
-                model="gpt-4o-mini",  # or gpt-4o, gpt-3.5-turbo
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": request_text}
-                ]
-            )
+            # Run the agent in a separate thread to avoid event loop conflict
+            result = []
             
-            # Extract the response text
-            response_text = response.choices[0].message.content
-            common_uuri.logging.debug(f"OpenAI response: {response_text}")
+            def run_agent():
+                # Create a new event loop for this thread
+                agent_result = asyncio.run(Runner.run(agent, request_text))
+                result.append(agent_result.final_output)
             
-            # Create response payload
+            thread = threading.Thread(target=run_agent)
+            thread.start()
+            thread.join()  # Wait for completion
+            
+            response_text = result[0]
+            common_uuri.logging.debug(f"Agent response: {response_text}")
+            
             return UPayload(
                 data=response_text.encode('utf-8'),
                 format=UPayloadFormat.UPAYLOAD_FORMAT_TEXT
             )
             
         except Exception as e:
-            common_uuri.logging.error(f"Error calling OpenAI: {e}")
-            error_message = f"Error: {str(e)}"
+            common_uuri.logging.error(f"Error calling OpenAI Agent: {e}")
             return UPayload(
-                data=error_message.encode('utf-8'),
+                data=f"Error: {str(e)}".encode('utf-8'),
                 format=UPayloadFormat.UPAYLOAD_FORMAT_TEXT
             )
 
@@ -84,7 +84,7 @@ async def register_rpc():
     common_uuri.logging.debug(f"Request Handler Register status {status}")
 
     while True:
-        await asyncio.sleep(1)  # Use asyncio.sleep instead of time.sleep
+        await asyncio.sleep(1)
 
 
 if __name__ == '__main__':
