@@ -12,7 +12,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-use paho_mqtt::{self as mqtt, MQTT_VERSION_5, QOS_1};
+use paho_mqtt::{self as mqtt};
 use tokio::sync::mpsc;
 use std::time::Duration;
 use kuksa_rust_sdk::kuksa::common;
@@ -20,8 +20,58 @@ use kuksa_rust_sdk::kuksa::common::ClientTraitV2;
 use kuksa_rust_sdk::kuksa::val::v2::KuksaClientV2;
 use kuksa_rust_sdk::v2_proto;
 
+use kuksa_rust_sdk::proto::kuksa::val::v2::value::TypedValue;
+use std::fmt;
+
+struct DisplayDatapoint(v2_proto::Value);
+
+fn display_array<T>(f: &mut fmt::Formatter<'_>, array: &[T]) -> fmt::Result
+where
+    T: fmt::Display,
+{
+    f.write_str("[")?;
+    let real_delimiter = ", ";
+    let mut delimiter = "";
+    for value in array {
+        write!(f, "{delimiter}")?;
+        delimiter = real_delimiter;
+        write!(f, "{value}")?;
+    }
+    f.write_str("]")
+}
+
+impl fmt::Display for DisplayDatapoint {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self.0.typed_value {
+            Some(value) => match value {
+                v2_proto::value::TypedValue::Bool(value) => f.pad(&format!("{value}")),
+                v2_proto::value::TypedValue::Int32(value) => f.pad(&format!("{value}")),
+                v2_proto::value::TypedValue::Int64(value) => f.pad(&format!("{value}")),
+                v2_proto::value::TypedValue::Uint32(value) => f.pad(&format!("{value}")),
+                v2_proto::value::TypedValue::Uint64(value) => f.pad(&format!("{value}")),
+                v2_proto::value::TypedValue::Float(value) => f.pad(&format!("{value:.2}")),
+                v2_proto::value::TypedValue::Double(value) => f.pad(&format!("{value}")),
+                v2_proto::value::TypedValue::String(value) => f.pad(&format!("'{value}'")),
+                v2_proto::value::TypedValue::StringArray(array) => display_array(f, &array.values),
+                v2_proto::value::TypedValue::BoolArray(array) => display_array(f, &array.values),
+                v2_proto::value::TypedValue::Int32Array(array) => display_array(f, &array.values),
+                v2_proto::value::TypedValue::Int64Array(array) => display_array(f, &array.values),
+                v2_proto::value::TypedValue::Uint32Array(array) => display_array(f, &array.values),
+                v2_proto::value::TypedValue::Uint64Array(array) => display_array(f, &array.values),
+                v2_proto::value::TypedValue::FloatArray(array) => display_array(f, &array.values),
+                v2_proto::value::TypedValue::DoubleArray(array) => display_array(f, &array.values),
+            },
+            None => f.pad("None"),
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() {
+
+    // Assumption:
+    // - Started after MQTT Broker and Kuksa Data broker
+    // --> This is achieved with ankaios configuration
 
     // Initialize Kuksa Client
     let host = "http://localhost:55555";
@@ -35,9 +85,6 @@ async fn main() {
     // Create the client
     let mut mqtt_client = mqtt::AsyncClient::new(host).unwrap();
 
-    // Get message stream before connecting.
-    let strm = mqtt_client.get_stream(25);
-
     // Connect with default options and wait for it to complete or fail
     // The default is an MQTT v3.x connection.
     mqtt_client.connect(None).await;
@@ -50,25 +97,10 @@ async fn main() {
             if msg.topic() == "mcu/temperature" {
                 let payload = msg.payload().to_vec();
                 println!("Got message payload: {:?}", payload);
-                // TODO publish via kuksa
-                            // Spawn an async Tokio task to handle publishing asynchronously
                 let _ = tx.try_send(payload);
             }
         }
     });
-
-    // tokio::spawn(async move {
-    //     while let Some(payload) = rx.recv().await {
-    //         println!("Processing payload asynchronously: {:?}", payload);
-    //         // TODO asynchronous publish via Kuksa here using await
-    //         v2_client.publish_value(
-    //             "Vehicle.Speed".to_owned(),
-    //             v2_proto::Value {
-    //                 typed_value: Some(v2_proto::value::TypedValue::Float(30.0)),
-    //             },
-    //         ).await;
-    //     }
-    // });
 
     // Wait asynchronously for the message on the oneshot receiver
 
@@ -127,12 +159,28 @@ async fn main() {
             }
         }
 
-        match v2_client.get_value("Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide.Color".to_owned()).await {
-            Ok(response) => {
-                println!("Got value for Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide.Color: {:?}", response);
-                let msg = mqtt::Message::new("compute/color", "test", mqtt::QOS_1); // TODO correct value
-                mqtt_client.publish(msg).await;
-            }
+        let result = v2_client.get_value("Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide.Color".to_owned()).await;
+        match result {
+            Ok(option) => match option {
+                Some(datapoint) => {
+                    println!("Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide.Color: {:?}", datapoint.value);
+                    match datapoint.value {
+                        Some(value) => {
+                            let printable = DisplayDatapoint(value);
+                            //println!("Got value for Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide.Color: {:?}", response);
+                            let msg = mqtt::Message::new("compute/color", printable.to_string(), mqtt::QOS_1); // TODO correct value
+                            let _ = mqtt_client.publish(msg).await;
+                        }                        ,
+                        None => {
+                            let msg = mqtt::Message::new("compute/color", "0", mqtt::QOS_1); // TODO correct value
+                            let _ = mqtt_client.publish(msg).await;
+                        }
+                    }
+                }
+                None => {
+                    println!("Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide.Color not set");
+                }
+            },
             Err(err) => {
                 println!(
                     "Getting value for signal {:?} failed: {:?}",
@@ -143,7 +191,4 @@ async fn main() {
 
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
-
-    println!("Disconnecting");
-    mqtt_client.disconnect(None).await;
 }
