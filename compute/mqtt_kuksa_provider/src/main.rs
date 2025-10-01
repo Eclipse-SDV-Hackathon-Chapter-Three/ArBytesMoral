@@ -133,11 +133,11 @@ async fn main() {
                         Some(value) => {
                             let printable = DisplayDatapoint(value);
                             //println!("Got value for Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide.Color: {:?}", response);
-                            let msg = mqtt::Message::new("compute/color", printable.to_string(), mqtt::QOS_1); // TODO correct value
+                            let msg = mqtt::Message::new("compute/color", printable.to_string(), mqtt::QOS_1);
                             let _ = mqtt_client.publish(msg).await;
-                        }                        ,
+                        },
                         None => {
-                            let msg = mqtt::Message::new("compute/color", "0", mqtt::QOS_1); // TODO correct value
+                            let msg = mqtt::Message::new("compute/color", "0", mqtt::QOS_1);
                             let _ = mqtt_client.publish(msg).await;
                         }
                     }
