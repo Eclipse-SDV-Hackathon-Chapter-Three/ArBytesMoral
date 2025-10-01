@@ -1,0 +1,8 @@
+{
+	"name": "Development Environment",
+	"dockerFile": "Dockerfile",
+    "containerEnv": {
+        "SHELL": "/bin/bash"
+    },
+    "build": {"context": ".."}
+}

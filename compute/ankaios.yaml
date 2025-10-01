@@ -4,7 +4,7 @@ workloads:
     runtime: podman
     agent: agent_compute
     runtimeConfig: |
-      image: ghcr.io/eclipse-kuksa/kuksa-databroker:main
+      image: ghcr.io/eclipse-kuksa/kuksa-databroker:0.6.0
       commandArgs: ["--insecure"]
       commandOptions: ["--net=host"]
   mqtt:
