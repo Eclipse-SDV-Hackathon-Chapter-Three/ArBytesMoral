@@ -1,6 +1,4 @@
-<img src="https://r2cdn.perplexity.ai/pplx-full-logo-primary-dark%402x.png" style="height:64px;margin-right:32px"/>
-
-# STM32 ThreadX MQTT IoT Sensor Node
+# ThreadX MQTT IoT Sensor Node
 
 ## Overview
 
