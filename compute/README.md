@@ -29,6 +29,10 @@ The **Eclipse Kuksa DataBroker** serves as the central data management component
 
 The **Eclipse Mosquitto MQTT Broker** provides the messaging service that acts as the communication backbone between components like the MCU board and the vehicle's compute node. It operates as a lightweight, standards-compliant MQTT implementation. Authentication is disabled.
 
+### Eclipse Zenoh Router
+
+The Zenoh Router is a core component of the Zenoh protocol that efficiently routes data between clients and subnetworks in diverse network topologies, enabling seamless data exchange and discovery in heterogeneous and geo-distributed environments. It supports low-latency, high-throughput communication with minimal overhead, making it suitable for resource-constrained devices and complex systems like automotive, industrial IoT, and robotics. Zenoh routers also provide adaptive routing, distributed edge storage, and integration capabilities, facilitating scalable, reliable, and flexible data sharing from edge to cloud. It is necessary to allow communication via Eclipse uProtocol with Eclipse Zenoh as uTransport.
+
 ### MQTT Kuksa Provider
 
 The **MQTT Kuksa Provider** acts as a bi-directional bridge between the Eclipse Mosquitto MQTT Broker and the Eclipse Kuksa DataBroker. It facilitates seamless communication between the MCU node and the centralized vehicle data model by translating MQTT messages to VSS signals and vice versa.
