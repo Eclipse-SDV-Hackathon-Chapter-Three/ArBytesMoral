@@ -1,4 +1,4 @@
-# CarMate – Speech-to-Text (STT) & Text-to-Speech (TTS) Demo
+### CarMate – Speech-to-Text (STT) & Text-to-Speech (TTS) Demo
 
 Voice Command Server — STT + ultra-fast TTS (Flask)
 
@@ -24,6 +24,8 @@ Features
 
 - Python 3.10+ (tested with 3.12)  
 run the docker file after
+
+# Start Container
 docker build -t car_mate_io:latest .
 docker run --rm -it --net=host car_mate_io
 

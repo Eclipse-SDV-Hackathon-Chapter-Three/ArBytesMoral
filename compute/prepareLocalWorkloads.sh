@@ -20,6 +20,7 @@ cd car_mate_agents
 # needs to run sudo because ank-agent runs as root user and
 # pulls from root container image storage
 sudo podman build -t localhost/car-mate-agents:latest .
+cd ..
 #############################################################
 
 ## VEHICLE DATA ACCESSOR ####################################

@@ -53,9 +53,6 @@ The **CarMateAgents** acts as an interface between the **CarMateIO** to a LLM an
 
 Further details can be found in the related README.md.
 
-
-
-
 ### Vehicle Data Accessor
 
 The **Vehicle Data Accessor** connects the Eclipse Kuksa DataBroker with **Eclipse uProtocol** and **Eclipse Zenoh**, enabling the CarMate application to interact seamlessly with the VSS (Vehicle Signal Specification) data model.

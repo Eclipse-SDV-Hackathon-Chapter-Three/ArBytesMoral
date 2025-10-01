@@ -40,8 +40,6 @@ workloads:
       commandOptions: ["--net=host"]
   CarMateIO:
     runtime: podman
-    dependencies:
-      zenohRouter: ADD_COND_RUNNING
     agent: agent_compute
     runtimeConfig: |
       image: localhost/car-mate-io:latest
@@ -49,7 +47,6 @@ workloads:
   CarMateAgents:
     runtime: podman
     dependencies:
-      zenohRouter: ADD_COND_RUNNING
       vehilceDataAccessor: ADD_COND_RUNNING
     agent: agent_compute
     runtimeConfig: |
