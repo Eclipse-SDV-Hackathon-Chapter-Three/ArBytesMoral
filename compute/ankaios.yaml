@@ -22,6 +22,14 @@ workloads:
     runtimeConfig: |
       image: localhost/mqtt-kuksa-provider:latest
       commandOptions: ["--net=host"]
+  vehilceDataAccessor:
+    runtime: podman
+    dependencies:
+      databroker: ADD_COND_RUNNING
+    agent: agent_compute
+    runtimeConfig: |
+      image: localhost/vehicle-data-accessor:latest
+      commandOptions: ["--net=host"]
   carlaprovider:
     runtime: podman
     dependencies:

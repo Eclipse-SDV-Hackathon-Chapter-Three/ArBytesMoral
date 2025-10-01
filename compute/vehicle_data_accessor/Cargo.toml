@@ -1,0 +1,19 @@
+[package]
+name = "app"
+edition = "2024"
+license = "Apache-2.0"
+
+[dependencies]
+env_logger = "0.11"
+tokio = { version = "1.41", features = [
+    "macros",
+    "rt-multi-thread",
+    "fs",
+    "io-util",
+    "process",
+] }
+kuksa-rust-sdk = { git = "https://github.com/eclipse-kuksa/kuksa-rust-sdk.git", branch = "main" }
+up-rust = { version = "0.7.0" }
+up-transport-zenoh = { version = "0.8" }
+zenoh = { version = "1.0.0-rc.2" }
+clap = { version = "4.5.4", features = ["derive"] }
