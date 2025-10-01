@@ -39,6 +39,7 @@ async def send_rpc_request_to_zenoh(data):
     rpc_client = InMemoryRpcClient(transport)
     response_payload = await rpc_client.invoke_method(uuri, payload)
     common_uuri.logging.debug(f"Response payload {response_payload}")
+    return response_payload
 
 # -----------------------------
 # Global recognizer (STT)
@@ -120,7 +121,6 @@ def stt():
         text = r.recognize_google(audio_data, language="en-US")
 
         print("text: " + text)
-        asyncio.run(send_rpc_request_to_zenoh(text))
 
         return jsonify({"text": text})
     except sr.UnknownValueError:
@@ -129,6 +129,13 @@ def stt():
         return jsonify({"error": f"STT API error: {e}"}), 502
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route("/rpc", methods=["POST"])
+def rpc():
+    data = request.get_json(silent=True) or {}
+    text = (data.get("text") or "").strip()
+    answer = asyncio.run(send_rpc_request_to_zenoh(text))
+    return answer
 
 
 @app.route("/tts", methods=["POST"])
