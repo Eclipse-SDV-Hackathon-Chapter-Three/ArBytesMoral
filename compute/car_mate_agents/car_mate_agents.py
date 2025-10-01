@@ -1,6 +1,6 @@
 import asyncio
 import threading
-from agents import Agent, Runner
+from agents import Agent, Runner, WebSearchTool
 
 from uprotocol.communication.inmemoryrpcserver import InMemoryRpcServer
 from uprotocol.communication.requesthandler import RequestHandler
@@ -17,13 +17,59 @@ from up_transport_zenoh.uptransportzenoh import UPTransportZenoh
 source = UUri(authority_name="voice-command", ue_id=18)
 transport = UPTransportZenoh.new(get_zenoh_default_config(), source)
 
-# Initialize the OpenAI Agent
-agent = Agent(
-    name="Assistant",
-    instructions="You are a helpful assistant for vehicle-related queries. Provide clear, concise, and accurate responses.",
+# LLM Agents
+news_weather_agent = Agent(
+    name="news_weather_agent",
+    instructions="Give the current weather.",
+    model="gpt-4o-mini",
+    tools=[WebSearchTool()]
+)
+
+news_general_agent = Agent(
+    name="news_weather_agent",
+    instructions="Give a brief general news overview of germany.",
+    model="gpt-4o-mini",
+    tools=[WebSearchTool()]
+)
+
+vehicle_data_agent = Agent(
+    name="vehicle_data_agent",
+    instructions="Handle vehicle-data related queries to get data.",
     model="gpt-4o-mini"
 )
 
+vehicle_command_agent = Agent(
+    name="vehicle_command_agent",
+    instructions="Handle vehicle-control related queries to set data trigger actions.",
+    model="gpt-4o-mini"
+)
+
+supervisor_agent = Agent(
+    name="supervisor_agent",
+    instructions="""You are a supervisor agent. When given a request, determine if it is related to vehicle information, vehicle commands, news, other tasks.
+    Dispatch the request to the correct sub-agent or tool and return the response. 
+    Use metric units or convert to metric units. 
+    Modify the final respons so it is easy and usefull when spoken via tts.""",
+    model="gpt-4o-mini",
+     tools=[
+        news_weather_agent.as_tool(
+            tool_name="news_weather",
+            tool_description="Give the current weather",
+        ),
+        news_general_agent.as_tool(
+            tool_name="news_general",
+            tool_description="Give a brief general news overview",
+        ),
+        vehicle_data_agent.as_tool(
+            tool_name="vehicle_datat",
+            tool_description="Handle vehicle-data related queries to get data",
+        ),
+        vehicle_command_agent.as_tool(
+            tool_name="vehicle_command",
+            tool_description="Handle vehicle-control related queries to set data trigger actions",
+        ),
+    ],
+)
 
 class MyRequestHandler(RequestHandler):
     def handle_request(self, msg: UMessage) -> UPayload:
@@ -38,7 +84,7 @@ class MyRequestHandler(RequestHandler):
             
             def run_agent():
                 # Create a new event loop for this thread
-                agent_result = asyncio.run(Runner.run(agent, voice_command))
+                agent_result = asyncio.run(Runner.run(supervisor_agent, voice_command))
                 result.append(agent_result.final_output)
             
             thread = threading.Thread(target=run_agent)
@@ -46,6 +92,8 @@ class MyRequestHandler(RequestHandler):
             thread.join()  # Wait for completion
             
             voice_answer = result[0]
+
+            print("voice_answer" + voice_answer)
             
             return UPayload(
                 data=voice_answer.encode('utf-8'),
