@@ -13,6 +13,7 @@ cd vehicle_data_accessor
 # needs to run sudo because ank-agent runs as root user and 
 # pulls from root container image storage
 sudo podman build -t localhost/vehicle-data-accessor:latest .
+cd ..
 
 ## CARLA PROVIDER ###########################################
 cd carla_provider
