@@ -19,7 +19,7 @@ async def send_rpc_request_to_zenoh():
     # create uuri
     uuri = create_method_uri()
     # create UPayload
-    data = "What is eclipse sdv?"
+    data = "How is the weather in Berlin today?"
     payload = UPayload(format=UPayloadFormat.UPAYLOAD_FORMAT_TEXT, data=bytes([ord(c) for c in data]))
     # invoke RPC method
     common_uuri.logging.debug(f"Send request to {uuri}")

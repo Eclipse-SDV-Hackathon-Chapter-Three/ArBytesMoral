@@ -1,6 +1,8 @@
 import asyncio
 import threading
 from agents import Agent, Runner
+from agents.tool import Tool
+
 
 from uprotocol.communication.inmemoryrpcserver import InMemoryRpcServer
 from uprotocol.communication.requesthandler import RequestHandler
@@ -17,13 +19,96 @@ from up_transport_zenoh.uptransportzenoh import UPTransportZenoh
 source = UUri(authority_name="voice-command", ue_id=18)
 transport = UPTransportZenoh.new(get_zenoh_default_config(), source)
 
-# Initialize the OpenAI Agent
-agent = Agent(
-    name="Assistant",
-    instructions="You are a helpful assistant for vehicle-related queries. Provide clear, concise, and accurate responses.",
+# LLM Agents
+news_weather_agent = Agent(
+    name="news_weather_agent",
+    instructions="Give the current weather.",
     model="gpt-4o-mini"
 )
 
+vehicle_data_agent = Agent(
+    name="vehicle_data_agent",
+    instructions="Handle vehicle-data related queries to get data.",
+    model="gpt-4o-mini"
+)
+
+vehicle_command_agent = Agent(
+    name="vehicle_command_agent",
+    instructions="Handle vehicle-control related queries to set data trigger actions.",
+    model="gpt-4o-mini"
+)
+
+supervisor_agent = Agent(
+    name="supervisor_agent",
+    instructions="""You are a supervisor agent. When given a request, determine if it is related to vehicle information, vehicle commands, news, other tasks.
+    Dispatch the request to the correct sub-agent or tool and return the response.""",
+    model="gpt-4o-mini",
+     tools=[
+        news_weather_agent.as_tool(
+            tool_name="news_weather",
+            tool_description="Give the current weather",
+        ),
+        vehicle_data_agent.as_tool(
+            tool_name="vehicle_datat",
+            tool_description="Handle vehicle-data related queries to get data",
+        ),
+        vehicle_command_agent.as_tool(
+            tool_name="vehicle_command",
+            tool_description="Handle vehicle-control related queries to set data trigger actions",
+        ),
+    ],
+)
+
+# def get_vehicle_status(vehicle_id: str) -> str:
+#     # Access vehicle database or API to fetch status
+#     return f"Vehicle {vehicle_id} is operational with all systems normal."
+
+# def execute_voice_command(command: str) -> str:
+#     # Perform voice command action or simulate execution
+#     return f"Executed voice command: {command}"
+
+# vehicle_data_agent.tools = [get_vehicle_status]
+# vehicle_command_agent.tools = [execute_voice_command]
+
+
+# # Define tools wrapping sub-agents
+# def news_weather_agent_tool(input_text: str) -> str:
+#     result = Runner.run_sync(news_weather_agent, input_text)
+#     return result.final_output
+
+# def vehicle_data_agent_tool(input_text: str) -> str:
+#     result = Runner.run_sync(vehicle_data_agent, input_text)
+#     return result.final_output
+
+# def vehicle_command_agent_tool(input_text: str) -> str:
+#     result = Runner.run_sync(vehicle_command_agent, input_text)
+#     return result.final_output
+
+# # Define your tools properly
+# news_weather_tool = Tool(
+#     name="news_weather_agent",
+#     func=news_weather_agent_tool,
+#     description="Handles weather news queries"
+# )
+
+# vehicle_data_tool = Tool(
+#     name="vehicle_data_agent",
+#     func=vehicle_data_agent_tool,
+#     description="Handles vehicle-data related queries"
+# )
+
+# vehicle_command_tool = Tool(
+#     name="vehicle_command_agent",
+#     func=vehicle_command_agent_tool,
+#     description="Handles vehicle-control related queries"
+# )
+
+# # Assign Tool instances to supervisor_agent.tools
+# supervisor_agent.tools = [
+#     news_weather_tool,
+#     vehicle_data_tool,
+#     vehicle_command_tool,
+# ]
 
 class MyRequestHandler(RequestHandler):
     def handle_request(self, msg: UMessage) -> UPayload:
@@ -38,7 +123,7 @@ class MyRequestHandler(RequestHandler):
             
             def run_agent():
                 # Create a new event loop for this thread
-                agent_result = asyncio.run(Runner.run(agent, voice_command))
+                agent_result = asyncio.run(Runner.run(supervisor_agent, voice_command))
                 result.append(agent_result.final_output)
             
             thread = threading.Thread(target=run_agent)
