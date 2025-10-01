@@ -1,0 +1,27 @@
+[package]
+name = "app"
+edition = "2024"
+license = "Apache-2.0"
+
+[dependencies]
+env_logger = "0.11"
+tokio = { version = "1.41", features = [
+    "macros",
+    "rt-multi-thread",
+    "fs",
+    "io-util",
+    "process",
+] }
+kuksa-rust-sdk = { git = "https://github.com/eclipse-kuksa/kuksa-rust-sdk.git", branch = "main" }
+carla = "0.11.1"
+log = "0.4"
+pretty_env_logger = "0.5.0"
+ctrlc = "3.5.0"
+
+[patch.crates-io]
+# point the carla crate at your fork/branch
+carla = { git = "https://github.com/Eclipse-SDV-Hackathon-Chapter-Three/carla-rust.git", branch = "action-buffer-fix", package = "carla" }
+
+# optional but nice: also point carla-sys at the same repo (same branch)
+# (the repo contains both crates in a workspace)
+carla-sys = { git = "https://github.com/Eclipse-SDV-Hackathon-Chapter-Three/carla-rust.git", branch = "action-buffer-fix", package = "carla-sys" }
