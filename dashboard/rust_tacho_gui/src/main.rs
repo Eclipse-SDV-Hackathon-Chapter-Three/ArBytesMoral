@@ -1,11 +1,33 @@
+mod common;
+
+use async_trait::async_trait;
+
 use eframe::egui;
 use egui::Slider;
 use egui_gauge::Gauge;
 use epaint::Color32;
 use std::io::{self, BufRead};
-use std::sync::mpsc::{self, Receiver};
+use std::str::FromStr;
+use std::sync::{Arc, mpsc::{self, Receiver}};
 use std::thread;
+use up_rust::{UListener, UMessage, UTransport, UUri};
+use up_transport_zenoh::UPTransportZenoh;
 
+
+struct SubscriberListener(tokio::runtime::Runtime);
+#[async_trait]
+impl UListener for SubscriberListener {
+    async fn on_receive(&self, msg: UMessage) {
+        // Offload processing of the message to a dedicated tokio runtime using
+        // threads not used by Zenoh.
+        self.0.spawn(async move {
+            let payload = msg.payload.unwrap();
+            let value = String::from_utf8(payload.to_vec()).unwrap();
+            let uri = msg.attributes.unwrap().source.unwrap().to_uri(false);
+            println!("Received message [topic: {uri}, payload: {value}]");
+        });
+    }
+}
 struct GaugeExample {
     value: u64,
     settings: bool,

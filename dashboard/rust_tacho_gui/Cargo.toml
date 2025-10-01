@@ -4,8 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+async-trait = "0.1.89"
 eframe = "^0.31"
 egui_gauge = "0.1.5"
 epaint = "^0.31"
-
-
+tokio = "1.47.1"
+up-rust = "0.7.1"
+up-transport-zenoh = "0.8.0"
