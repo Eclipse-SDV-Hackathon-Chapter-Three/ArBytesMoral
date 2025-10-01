@@ -1,7 +1,6 @@
 import asyncio
 import threading
 
-from uprotocol.client.usubscription.v3.inmemoryusubcriptionclient import InMemoryUSubscriptionClient
 from uprotocol.communication.inmemoryrpcserver import InMemoryRpcServer
 from uprotocol.communication.requesthandler import RequestHandler
 from uprotocol.transport.ulistener import UListener
