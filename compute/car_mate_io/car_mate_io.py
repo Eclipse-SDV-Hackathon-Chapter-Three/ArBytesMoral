@@ -120,7 +120,7 @@ def stt():
             audio_data = r.record(source)
         text = r.recognize_google(audio_data, language="en-US")
 
-        print("text: " + text)
+        print("This is the return of the stt Route: " + text)
 
         return jsonify({"text": text})
     except sr.UnknownValueError:
@@ -134,9 +134,10 @@ def stt():
 def rpc():
     data = request.get_json(silent=True) or {}
     text = (data.get("text") or "").strip()
-    answer = asyncio.run(send_rpc_request_to_zenoh(text))
-    return answer
-
+    answer = text
+    print("This is the return of the RPC route:" + answer)
+    # answer = asyncio.run(send_rpc_request_to_zenoh(text))
+    return jsonify({"text": answer})
 
 @app.route("/tts", methods=["POST"])
 def tts():
@@ -148,6 +149,8 @@ def tts():
     """
     data = request.get_json(silent=True) or {}
     text = (data.get("text") or "").strip()
+
+    print(data)
     if not text:
         return jsonify({"error": "No text provided"}), 400
 
@@ -162,35 +165,15 @@ def tts():
         rate = 150
 
     try:
-        if _is_linux():
-            # Primary fast path: espeak -> WAV bytes
-            wav_bytes = _espeak_tts_bytes_cached(text, voice=voice, rate=rate)
-            return send_file(
-                io.BytesIO(wav_bytes),
-                mimetype="audio/wav",
-                as_attachment=False,
-                download_name="tts.wav",
-            )
-        else:
-            # Fallback: pyttsx3 (file-based)
-            engine = _get_pyttsx3()
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
-                tmp_path = tmp.name
-            try:
-                engine.setProperty("rate", rate)
-                engine.save_to_file(text, tmp_path)
-                engine.runAndWait()
-                return send_file(
-                    tmp_path,
-                    mimetype="audio/wav",
-                    as_attachment=False,
-                    download_name="tts.wav",
-                )
-            finally:
-                try:
-                    os.remove(tmp_path)
-                except OSError:
-                    pass
+        # espeak -> WAV bytes
+        wav_bytes = _espeak_tts_bytes_cached(text, voice=voice, rate=rate)
+        return send_file(
+            io.BytesIO(wav_bytes),
+            mimetype="audio/wav",
+            as_attachment=False,
+            download_name="tts.wav",
+        )
+
 
     except RuntimeError as e:
         return jsonify({"error": str(e)}), 500

@@ -90,9 +90,6 @@
     <h2>Text-to-Speech (TTS)</h2>
     <p class="small">Type in your text - it will be synthesized.</p>
     <textarea id="ttsInput" placeholder="Type in your text - it will be synthesized …">Hello from Python TTS!</textarea>
-    <div class="row">
-      <button id="btnSpeak">🔊 Speak</button>
-    </div>
     <div id="ttsStatus" class="status"></div>
     <audio id="ttsAudio" controls></audio>
   </div>
@@ -240,21 +237,43 @@
             sttStatus.textContent = 'Error: ' + data.error;
           } else {
             sttStatus.textContent = 'Done ✅';
-            sttResult.value = data.text || (data.message ? `[${data.message}]` : '');
-            console.log("data.text:" + data.text)
-            console.log("data.message:" + data.message)
+            sttResult.value = data.text;
 
-            sst_text = data.text
+            text = data.text
+            console.log("sst text:" + text)
 
-            const res2 = await fetch('/rpc', { method: 'POST', body: JSON.stringify({ sst_text }) });
-            const json = await res2.json();
-            tts_text = json.text
-            const res3 = await fetch('/tts', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ tts_text })
-            });
+            const res_rpc = await fetch('/rpc', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text }) });
+            const rpc_data = await res_rpc.json();
+            console.log(rpc_data)
+            text = rpc_data.text
 
+            ttsInput.value = text;
+
+            ttsStatus.textContent = 'Create Audio…';
+
+            try {
+            console.log("tts_text: " + text)
+
+              const res_tts = await fetch('/tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+              });
+              if (!res_tts.ok) {
+                const err = await res_tts.json().catch(() => ({ error: 'Unknown error' }));
+                ttsStatus.textContent = 'Fehler: ' + (err.error || res_tts.statusText);
+              } else {
+                const blob = await res_tts.blob();
+                ttsAudio.src = URL.createObjectURL(blob);
+                await ttsAudio.play().catch(() => { });
+                ttsStatus.textContent = 'Done ✅';
+              }
+            } catch (e) {
+              console.error(e);
+              ttsStatus.textContent = 'Network error.';
+            } finally {
+              btnSpeak.disabled = false;
+            }
           }
         } catch (e) {
           console.error(e);
