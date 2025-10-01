@@ -8,14 +8,16 @@ Eclipse Ankaios is used as workload and container orchestration. See https://ecl
 
 Assumption is that there is an ank-server and ank-agent running on the compute ecu.
 
-sudo systemctl start ank-server
-sudo systemctl start ank-agent
+> sudo systemctl start ank-server
+> sudo systemctl start ank-agent
 
 Make sure that the local agent name corresponds to agent_compute in /etc/ankaios/ank-agent.conf. Otherwise the ank-server cannot find the corresponding ank-agent.
 
 Then the related workloads can be started by
 
-ank -k apply ankaios.yaml
+> ank -k apply ankaios.yaml
+
+The Ankaios Dashboard is also orchestrated as workload and can be reached as Web UI from your browser with http://localhost:5001.
 
 ## Workloads
 

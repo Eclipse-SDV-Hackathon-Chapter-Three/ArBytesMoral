@@ -12,7 +12,7 @@ workloads:
     agent: agent_compute
     runtimeConfig: |
       image: docker.io/library/eclipse-mosquitto
-      commandOptions: ["--net=host", "-v", "/home/chris/hackathon2025/ArBytesMoral/compute/mosquitto/config:/mosquitto/config"]
+      commandOptions: ["--net=host", "-v", "/home/gdaniel/sdv/ArBytesMoral/compute/mosquitto/config:/mosquitto/config:ro,Z"]
   mqtt2kuksa:
     runtime: podman
     dependencies:
@@ -38,3 +38,23 @@ workloads:
     runtimeConfig: |
       image: localhost/carla-provider:latest
       commandOptions: ["--net=host"]
+  Ankaios_Dashboard:
+    runtime: podman
+    agent: agent_compute
+    restart: true
+    updateStrategy: AT_LEAST_ONCE
+    accessRights:
+      allow: []
+      deny: []
+    restartPolicy: NEVER 
+    dependencies:
+    runtimeConfig: |
+       image: ghcr.io/eclipse-ankaios-dashboard/ankaios-dashboard:latest
+       commandOptions: ["-p", "5001:5001"]
+    controlInterfaceAccess:
+        allowRules:
+          - type: StateRule
+            operation: ReadWrite
+            filterMask:
+              - "desiredState"
+              - "workloadStates"
