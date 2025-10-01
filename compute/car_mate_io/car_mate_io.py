@@ -134,9 +134,9 @@ def stt():
 def rpc():
     data = request.get_json(silent=True) or {}
     text = (data.get("text") or "").strip()
-    answer = text
+    answer = asyncio.run(send_rpc_request_to_zenoh(text))
     print("This is the return of the RPC route:" + answer)
-    # answer = asyncio.run(send_rpc_request_to_zenoh(text))
+    
     return jsonify({"text": answer})
 
 @app.route("/tts", methods=["POST"])
