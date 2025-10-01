@@ -1,11 +1,11 @@
-# MQTT Kuksa Provider TODO
+# Vehicle Data Accessor
 
-The **MQTT Kuksa Provider** acts as a bi-directional bridge between the Eclipse Mosquitto MQTT Broker and the Eclipse Kuksa DataBroker. It facilitates seamless communication between the MCU node and the centralized vehicle data model by translating MQTT messages to VSS signals and vice versa.
+The **Vehicle Data Accessor** connects the Eclipse Kuksa DataBroker with **Eclipse uProtocol** and **Eclipse Zenoh**, enabling the CarMate application to interact seamlessly with the VSS (Vehicle Signal Specification) data model.
 
 ## Feature #1
 
-Listen to MQTT topic mcu/temperature and transmit the temperature data on the corresponding VSS signal Vehicle.Cabin.HVAC.AmbientAirTemperature.
+Retrieve the relevant VSS Signals Vehicle.Exterior.Humidity and Vehicle.Cabin.HVAC.AmbientAirTemperature and transmit the values on uProtocol with Zenoh.
 
 ## Feature #2
 
-Retrieves the VSS Signal Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide.Color and transmit the value on MQTT topic compute/color.
+Transfer the Ambient Color to be set received via Uprotocol and Zenoh to the VSS Signal Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide.Color.

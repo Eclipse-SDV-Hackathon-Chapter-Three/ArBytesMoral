@@ -34,3 +34,9 @@ The **Eclipse Mosquitto MQTT Broker** provides the messaging service that acts a
 The **MQTT Kuksa Provider** acts as a bi-directional bridge between the Eclipse Mosquitto MQTT Broker and the Eclipse Kuksa DataBroker. It facilitates seamless communication between the MCU node and the centralized vehicle data model by translating MQTT messages to VSS signals and vice versa.
 
 Further details can be found in the related README.md.
+
+### Vehicle Data Accessor
+
+The **Vehicle Data Accessor** connects the Eclipse Kuksa DataBroker with **Eclipse uProtocol** and **Eclipse Zenoh**, enabling the CarMate application to interact seamlessly with the VSS (Vehicle Signal Specification) data model.
+
+Further details can be found in the related README.md.
