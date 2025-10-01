@@ -8,14 +8,13 @@ from uprotocol.v1.uattributes_pb2 import UPayloadFormat
 from uprotocol.v1.umessage_pb2 import UMessage
 from uprotocol.v1.uri_pb2 import UUri
 
-from up_transport_zenoh.examples import common_uuri
-from up_transport_zenoh.examples.common_uuri import create_method_uri, get_zenoh_default_config
+import common_uuri
 from up_transport_zenoh.uptransportzenoh import UPTransportZenoh
 
 from agents import Agent, Runner, WebSearchTool
 
 source = UUri(authority_name="voice-command", ue_id=18)
-transport = UPTransportZenoh.new(get_zenoh_default_config(), source)
+transport = UPTransportZenoh.new(common_uuri.get_zenoh_config(), source)
 
 # LLM Agents
 news_weather_agent = Agent(
@@ -110,7 +109,7 @@ class MyRequestHandler(RequestHandler):
 
 
 async def register_rpc():
-    uuri = create_method_uri()
+    uuri = common_uuri.create_method_uri()
     rpc_server = InMemoryRpcServer(transport)
     status = await rpc_server.register_request_handler(uuri, MyRequestHandler())
     common_uuri.logging.debug(f"Request Handler Register status {status}")
