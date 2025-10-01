@@ -13,3 +13,12 @@ workloads:
     runtimeConfig: |
       image: docker.io/library/eclipse-mosquitto
       commandOptions: ["--net=host", "-v", "/home/chris/hackathon2025/ArBytesMoral/compute/mosquitto/config:/mosquitto/config"]
+  mqtt2kuksa:
+    runtime: podman
+    dependencies:
+      mqtt: ADD_COND_RUNNING
+      databroker: ADD_COND_RUNNING
+    agent: agent_compute
+    runtimeConfig: |
+      image: localhost/mqtt-kuksa-provider:latest
+      commandOptions: ["--net=host"]
