@@ -110,15 +110,15 @@ async fn main() {
             }
         }
 
-        result = v2_client.get_value("Vehicle.Exterior.HVAC.Humidity".to_owned()).await;
+        let result = v2_client.get_value("Vehicle.Exterior.Humidity".to_owned()).await;
         match result {
             Ok(option) => match option {
                 Some(datapoint) => {
-                    println!("Vehicle.Exterior.HVAC.Humidity: {:?}", datapoint.value);
+                    println!("Vehicle.Exterior.Humidity: {:?}", datapoint.value);
                     match datapoint.value {
                         Some(value) => {
                             let printable = DisplayDatapoint(value);
-                            println!("Got value for Vehicle.Exterior.HVAC.Humidity: {:?}", printable.to_string());
+                            println!("Got value for Vehicle.Exterior.Humidity: {:?}", printable.to_string());
                             // TODO: Publish on uProtocol
                             //let msg = mqtt::Message::new("compute/color", printable.to_string(), mqtt::QOS_1);
                             //let _ = mqtt_client.publish(msg).await;
@@ -129,13 +129,13 @@ async fn main() {
                     }
                 }
                 None => {
-                    println!("Vehicle.Exterior.HVAC.Humidity not set");
+                    println!("Vehicle.Exterior.Humidity not set");
                 }
             },
             Err(err) => {
                 println!(
                     "Getting value for signal {:?} failed: {:?}",
-                    "Vehicle.Exterior.HVAC.Humidity", err
+                    "Vehicle.Exterior.Humidity", err
                 );
             }
         }
