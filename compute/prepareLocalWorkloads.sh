@@ -5,3 +5,11 @@ cd mqtt_kuksa_provider
 # pulls from root container image storage
 sudo podman build -t localhost/mqtt-kuksa-provider:latest .
 cd ..
+
+## CARLA PROVIDER ###########################################
+cd carla_provider
+# needs to run sudo because ank-agent runs as root user and
+# pulls from root container image storage
+sudo podman build -t localhost/carla-provider:latest .
+cd ..
+#############################################################
