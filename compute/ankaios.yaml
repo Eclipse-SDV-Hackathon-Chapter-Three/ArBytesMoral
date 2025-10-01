@@ -37,3 +37,11 @@ workloads:
     runtimeConfig: |
       image: localhost/vehicle-data-accessor:latest
       commandOptions: ["--net=host"]
+  carlaprovider:
+    runtime: podman
+    dependencies:
+      databroker: ADD_COND_RUNNING
+    agent: agent_compute
+    runtimeConfig: |
+      image: localhost/carla-provider:latest
+      commandOptions: ["--net=host"]

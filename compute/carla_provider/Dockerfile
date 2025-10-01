@@ -34,7 +34,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
     | sh -s -- -y 
 COPY ./ ${WORKSPACE_DIR}
 WORKDIR ${WORKSPACE_DIR}
-RUN --mount=type=cache,target=${WORKSPACE_DIR}/target/release cargo build --release \
+RUN --mount=type=cache,target=${WORKSPACE_DIR}/target/release /root/.cargo/bin/cargo build --release \
     && cp ${WORKSPACE_DIR}/target/release/app /usr/local/bin/
 
 ENV RUST_BACKTRACE=full
