@@ -25,6 +25,13 @@ news_weather_agent = Agent(
     tools=[WebSearchTool()]
 )
 
+news_general_agent = Agent(
+    name="news_weather_agent",
+    instructions="Give a brief general news overview of germany.",
+    model="gpt-4o-mini",
+    tools=[WebSearchTool()]
+)
+
 vehicle_data_agent = Agent(
     name="vehicle_data_agent",
     instructions="Handle vehicle-data related queries to get data.",
@@ -48,6 +55,10 @@ supervisor_agent = Agent(
         news_weather_agent.as_tool(
             tool_name="news_weather",
             tool_description="Give the current weather",
+        ),
+        news_general_agent.as_tool(
+            tool_name="news_general",
+            tool_description="Give a brief general news overview",
         ),
         vehicle_data_agent.as_tool(
             tool_name="vehicle_datat",
