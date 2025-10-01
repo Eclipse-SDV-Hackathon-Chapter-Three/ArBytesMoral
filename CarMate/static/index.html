@@ -22,26 +22,26 @@
 
   <div class="card">
     <h2>Speech-to-Text (STT)</h2>
-    <p class="small">Drücke „Aufnahme starten“, sprich, und dann „Stop &amp; Transkribieren“. Die Aufnahme wird als WAV (mono, 16 kHz) an <code>/stt</code> gesendet.</p>
+    <p class="small">Press „Record“, talk, then „Stop &amp; Transcribe. The recording will be sent as WAV (mono, 16 kHz) to <code>/stt</code>.</p>
 
     <div class="row">
-      <button id="btnStart">🎙️ Aufnahme starten</button>
-      <button id="btnStop" disabled>⏹️ Stop &amp; Transkribieren</button>
+      <button id="btnStart">🎙️ Start Recording</button>
+      <button id="btnStop" disabled>⏹️ Stop &amp; Transcribing</button>
     </div>
     <div id="sttStatus" class="status"></div>
     <audio id="sttPlayback" controls></audio>
-    <label class="small"><input type="checkbox" id="playbackToggle" checked /> Eigene Aufnahme abspielen</label>
+    <label class="small"><input type="checkbox" id="playbackToggle" checked /> Play own Recording</label>
 
-    <h3>Erkanntes Ergebnis</h3>
-    <textarea id="sttResult" placeholder="Hier erscheint der erkannte Text …" readonly></textarea>
+    <h3>Result</h3>
+    <textarea id="sttResult" placeholder="The transcript will be shown here…" readonly></textarea>
   </div>
 
   <div class="card">
     <h2>Text-to-Speech (TTS)</h2>
-    <p class="small">Gib Text ein und er wird serverseitig (pyttsx3) zu WAV synthetisiert.</p>
-    <textarea id="ttsInput" placeholder="Gib hier den zu sprechenden Text ein …">Hello from Python TTS!</textarea>
+    <p class="small">Type in your text - it will be synthesized.</p>
+    <textarea id="ttsInput" placeholder="Type in your text - it will be synthesized …">Hello from Python TTS!</textarea>
     <div class="row">
-      <button id="btnSpeak">🔊 Sprechen</button>
+      <button id="btnSpeak">🔊 Speak</button>
     </div>
     <div id="ttsStatus" class="status"></div>
     <audio id="ttsAudio" controls></audio>
@@ -51,7 +51,7 @@
 (() => {
   // ======== WAV-Encoder (PCM 16-bit, mono, 16kHz) ========
   function encodeWAV(samples, sampleRate) {
-    // Downsample auf 16kHz, mono
+    // Downsample to 16kHz, mono
     const targetRate = 16000;
     const ratio = sampleRate / targetRate;
     const newLength = Math.round(samples.length / ratio);
@@ -109,7 +109,7 @@
     return new Blob([view], { type: 'audio/wav' });
   }
 
-  // ======== Aufnahme & STT ========
+  // ======== Recording & STT ========
   let mediaStream = null;
   let audioCtx = null;
   let processor = null;
@@ -140,30 +140,30 @@
 
       processor.onaudioprocess = e => {
         const channel = e.inputBuffer.getChannelData(0);
-        // Kopie, damit der Ringpuffer nicht überschrieben wird
+        // Copy, to not overflow the ringbuffer
         recorded.push(new Float32Array(channel));
       };
 
-      sttStatus.textContent = '🎙️ Aufnahme läuft…';
+      sttStatus.textContent = '🎙️ Recording…';
       btnStop.disabled = false;
     } catch (err) {
       console.error(err);
-      sttStatus.textContent = 'Mikrofonzugriff abgelehnt oder nicht verfügbar.';
+      sttStatus.textContent = 'Microphone access denied or not available.';
       btnStart.disabled = false;
     }
   };
 
   btnStop.onclick = async () => {
     btnStop.disabled = true;
-    sttStatus.textContent = 'Stoppe & verarbeite…';
+    sttStatus.textContent = 'Stop & process…';
 
-    // Stoppe Audio
+    // Stop audio
     if (processor) processor.disconnect();
     if (sourceNode) sourceNode.disconnect();
     if (audioCtx) await audioCtx.close();
     if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
 
-    // Samples zusammenfügen
+    // Samples merging
     let length = recorded.reduce((acc, cur) => acc + cur.length, 0);
     const merged = new Float32Array(length);
     let offset = 0;
@@ -172,14 +172,14 @@
       offset += chunk.length;
     }
 
-    // WAV-Blob erzeugen (mono, 16 kHz, PCM16)
+    // WAV-Blob creation (mono, 16 kHz, PCM16)
     const wavBlob = encodeWAV(merged, (window.AudioContext || window.webkitAudioContext) ? (audioCtx?.sampleRate || 48000) : 48000);
     if (playbackToggle.checked) {
       sttPlayback.src = URL.createObjectURL(wavBlob);
       sttPlayback.play().catch(()=>{});
     }
 
-    sttStatus.textContent = 'Sende an Server…';
+    sttStatus.textContent = 'Send to server…';
     const form = new FormData();
     form.append('audio', wavBlob, 'recording.wav');
 
@@ -187,14 +187,16 @@
       const res = await fetch('/stt', { method: 'POST', body: form });
       const data = await res.json();
       if (data.error) {
-        sttStatus.textContent = 'Fehler: ' + data.error;
+        sttStatus.textContent = 'Error: ' + data.error;
       } else {
-        sttStatus.textContent = 'Fertig ✅';
+        sttStatus.textContent = 'Done ✅';
         sttResult.value = data.text || (data.message ? `[${data.message}]` : '');
+        console.log("data.text:" + data.text)
+        console.log("data.message:" + data.message)
       }
     } catch (e) {
       console.error(e);
-      sttStatus.textContent = 'Netzwerkfehler beim Senden.';
+      sttStatus.textContent = 'Network error while sending.';
     }
 
     btnStart.disabled = false;
@@ -209,10 +211,10 @@
   btnSpeak.onclick = async () => {
     const text = ttsInput.value.trim();
     if (!text) {
-      ttsStatus.textContent = 'Bitte Text eingeben.';
+      ttsStatus.textContent = 'Please inout text.';
       return;
     }
-    ttsStatus.textContent = 'Erzeuge Audio…';
+    ttsStatus.textContent = 'Create Audio…';
     btnSpeak.disabled = true;
 
     try {
@@ -228,11 +230,11 @@
         const blob = await res.blob();
         ttsAudio.src = URL.createObjectURL(blob);
         await ttsAudio.play().catch(()=>{});
-        ttsStatus.textContent = 'Fertig ✅';
+        ttsStatus.textContent = 'Done ✅';
       }
     } catch (e) {
       console.error(e);
-      ttsStatus.textContent = 'Netzwerkfehler.';
+      ttsStatus.textContent = 'Network error.';
     } finally {
       btnSpeak.disabled = false;
     }
