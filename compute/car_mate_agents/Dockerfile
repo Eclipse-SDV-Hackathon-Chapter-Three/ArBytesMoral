@@ -2,7 +2,7 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm as base
 
 WORKDIR /app
 
-COPY . /app
+COPY pyproject.toml /app
 
 RUN uv venv \
     && echo "ENV PATH=/app/.venv/bin:$PATH" >> /uv_vars.sh \
@@ -20,5 +20,7 @@ RUN    git clone --recurse-submodules https://github.com/eclipse-uprotocol/up-py
 RUN    git clone https://github.com/Eclipse-SDV-Hackathon-Chapter-Three/up-transport-zenoh-python.git \
         && cd up-transport-zenoh-python/ \
         && uv pip install .
+
+COPY . /app
 
 CMD [ "python", "-u", "./car_mate_agents.py" ]
