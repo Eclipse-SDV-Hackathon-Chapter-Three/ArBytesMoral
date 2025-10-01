@@ -120,6 +120,10 @@ def stt():
         with sr.AudioFile(audio_file) as source:
             audio_data = r.record(source)
         text = r.recognize_google(audio_data, language="en-US")
+
+        print("text: " + text)
+
+
         return jsonify({"text": text})
     except sr.UnknownValueError:
         return jsonify({"text": "", "message": "Could not understand audio"}), 200

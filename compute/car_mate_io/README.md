@@ -38,5 +38,5 @@ pip install -r CarMate/requirements.txt
 Run with Python (default Flask dev server)
 bash
 
-python3 CarMate/app.py
+python3 compute/car_mate_io/app.py
 Opens at: http://localhost:5000
