@@ -33,7 +33,7 @@ async def send_rpc_request_to_zenoh(data):
     # create uuri
     uuri = create_method_uri()
     # create UPayload
-    payload = UPayload(format=UPayloadFormat.UPAYLOAD_FORMAT_TEXT, data=bytes([ord(c) for c in data]))
+    payload = UPayload(format=UPayloadFormat.UPAYLOAD_FORMAT_TEXT, data=data.encode("utf-8"))
     # invoke RPC method
     common_uuri.logging.debug(f"Send request to {uuri}")
     rpc_client = InMemoryRpcClient(transport)
@@ -134,6 +134,7 @@ def stt():
 def rpc():
     data = request.get_json(silent=True) or {}
     text = (data.get("text") or "").strip()
+    print(text)
     answer = asyncio.run(send_rpc_request_to_zenoh(text))
     print("This is the return of the RPC route:" + answer)
     
