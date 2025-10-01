@@ -1,6 +1,5 @@
 import asyncio
 import threading
-from agents import Agent, Runner, WebSearchTool
 
 from uprotocol.communication.inmemoryrpcserver import InMemoryRpcServer
 from uprotocol.communication.requesthandler import RequestHandler
@@ -13,6 +12,7 @@ from up_transport_zenoh.examples import common_uuri
 from up_transport_zenoh.examples.common_uuri import create_method_uri, get_zenoh_default_config
 from up_transport_zenoh.uptransportzenoh import UPTransportZenoh
 
+from agents import Agent, Runner, WebSearchTool
 
 source = UUri(authority_name="voice-command", ue_id=18)
 transport = UPTransportZenoh.new(get_zenoh_default_config(), source)
