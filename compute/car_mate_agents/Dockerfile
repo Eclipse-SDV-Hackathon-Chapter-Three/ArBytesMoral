@@ -17,7 +17,7 @@ RUN    git clone --recurse-submodules https://github.com/eclipse-uprotocol/up-py
         && uv pip install setuptools grpcio-tools \
         && uv pip install . 
 
-RUN    git clone https://github.com/eclipse-uprotocol/up-transport-zenoh-python.git \
+RUN    git clone https://github.com/Eclipse-SDV-Hackathon-Chapter-Three/up-transport-zenoh-python.git \
         && cd up-transport-zenoh-python/ \
         && uv pip install .
 
