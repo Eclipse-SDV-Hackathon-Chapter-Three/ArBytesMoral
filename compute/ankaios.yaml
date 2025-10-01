@@ -38,6 +38,20 @@ workloads:
     runtimeConfig: |
       image: localhost/carla-provider:latest
       commandOptions: ["--net=host"]
+  CarMateIO:
+    runtime: podman
+    agent: agent_compute
+    runtimeConfig: |
+      image: localhost/car-mate-io:latest
+      commandOptions: ["--net=host"]
+  CarMateAgents:
+    runtime: podman
+    dependencies:
+      vehilceDataAccessor: ADD_COND_RUNNING
+    agent: agent_compute
+    runtimeConfig: |
+      image: localhost/car-mate-agents:latest
+      commandOptions: ["--net=host"]
   Ankaios_Dashboard:
     runtime: podman
     agent: agent_compute

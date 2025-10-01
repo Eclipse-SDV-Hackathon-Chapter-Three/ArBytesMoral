@@ -1,0 +1,20 @@
+{
+  "mode": "peer",
+  "connect": {
+    "endpoints": ["tcp/192.168.43.241:7447"]
+  },
+  "scouting": {
+    "multicast": {
+      "enabled": true,
+      "address": "224.0.0.224:7446",
+      "interface": "auto",
+      "autoconnect": { "router": [], "peer": ["router", "peer"] },
+      "listen": true
+    },
+    "gossip": {
+      "enabled": true,
+      "multihop": false,
+      "autoconnect": { "router": [], "peer": ["router", "peer"] }
+    }
+  }
+}

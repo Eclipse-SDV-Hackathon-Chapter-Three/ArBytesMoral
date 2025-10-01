@@ -41,6 +41,18 @@ The **MQTT Kuksa Provider** acts as a bi-directional bridge between the Eclipse 
 
 Further details can be found in the related README.md.
 
+### CarMateIO
+
+The **CarMateIO** acts as an interface to the driver by hosting an webapp where the driver can talk with his car or give commands to gain information on its surroundings. The main Feature is Speech to Text (STT) and Text to Speech (TTS). The App talks to **CarMateAgents** that connects to a LLM and the **Vehicle Data Accessor**. 
+
+Further details can be found in the related README.md.
+
+### CarMateAgents
+
+The **CarMateAgents** acts as an interface between the **CarMateIO** to a LLM and the **Vehicle Data Accessor**. It consists of an supervisor agent that controls different agents using tool. For example the generic openai api, an online weather service or vehicle data provided via **Vehicle Data Accessor**.
+
+Further details can be found in the related README.md.
+
 ### Vehicle Data Accessor
 
 The **Vehicle Data Accessor** connects the Eclipse Kuksa DataBroker with **Eclipse uProtocol** and **Eclipse Zenoh**, enabling the CarMate application to interact seamlessly with the VSS (Vehicle Signal Specification) data model.

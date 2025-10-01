@@ -6,6 +6,21 @@ cd mqtt_kuksa_provider
 # pulls from root container image storage
 sudo podman build -t localhost/mqtt-kuksa-provider:latest .
 cd ..
+
+## IO CARMATE ####################################
+cd car_mate_io
+# needs to run sudo because ank-agent runs as root user and
+# pulls from root container image storage
+sudo podman build -t localhost/car-mate-io:latest .
+cd ..
+#############################################################
+
+## AGENTS CARMATE ####################################
+cd car_mate_agents
+# needs to run sudo because ank-agent runs as root user and
+# pulls from root container image storage
+sudo podman build -t localhost/car-mate-agents:latest .
+cd ..
 #############################################################
 
 ## VEHICLE DATA ACCESSOR ####################################

@@ -1,3 +1,92 @@
 # Ignore the target directory
 **/target/
 Cargo.lock
+
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# PEP 582; package directories
+__pypackages__/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# # Docker-related files to ignore in git
+# .dockerignore
+# Dockerfile
+
+# Docker build context ignores (usually go in .dockerignore)
+*.log
+pip-log.txt
+pip-delete-this-directory.txt
+*.pyc
+*.pyo
+*.pyd
+__pycache__
+*.so
+.tox
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.mypy_cache
+.pytest_cache
+.hypothesis
+
+# Git and OS junk files
+.git/
+.gitignore
+.gitmodules
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+*.bak
+*.tmp

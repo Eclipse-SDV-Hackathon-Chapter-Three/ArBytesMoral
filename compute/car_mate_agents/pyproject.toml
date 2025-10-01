@@ -1,0 +1,12 @@
+[project]
+name = "car_mate_agents"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "eclipse-zenoh>=1.5.1",
+    "openai>=1.109.1",
+    "openai-agents>=0.3.2",
+    "zenoh-cli>=0.6.8",
+]
