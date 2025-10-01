@@ -13,6 +13,12 @@ workloads:
     runtimeConfig: |
       image: docker.io/library/eclipse-mosquitto
       commandOptions: ["--net=host", "-v", "/home/chris/hackathon2025/ArBytesMoral/compute/mosquitto/config:/mosquitto/config"]
+  zenohRouter:
+    runtime: podman
+    agent: agent_compute
+    runtimeConfig: |
+      image: docker.io/eclipse/zenoh
+      commandOptions: ["--net=host"]
   mqtt2kuksa:
     runtime: podman
     dependencies:
@@ -25,7 +31,7 @@ workloads:
   vehilceDataAccessor:
     runtime: podman
     dependencies:
-      mqtt: ADD_COND_RUNNING
+      zenohRouter: ADD_COND_RUNNING
       databroker: ADD_COND_RUNNING
     agent: agent_compute
     runtimeConfig: |
