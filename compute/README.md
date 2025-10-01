@@ -34,3 +34,7 @@ The **Eclipse Mosquitto MQTT Broker** provides the messaging service that acts a
 The **MQTT Kuksa Provider** acts as a bi-directional bridge between the Eclipse Mosquitto MQTT Broker and the Eclipse Kuksa DataBroker. It facilitates seamless communication between the MCU node and the centralized vehicle data model by translating MQTT messages to VSS signals and vice versa.
 
 Further details can be found in the related README.md.
+
+### CARLA Provider
+
+The **CARLA Provider** demonstrates a practical bridge between CARLA and KUKSA Databroker (on the same or different machines). The Provider connects to a CARLA simulator, starts a Traffic Manager and spawns a vehicle with an autopilot driving it. Moreover it gently changes the weather over time. It reads back the wetness and pusblishes it to KUKSA Databroker as VSS conform value.
