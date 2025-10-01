@@ -9,3 +9,7 @@ Retrieve the relevant VSS Signals Vehicle.Exterior.Humidity and Vehicle.Cabin.HV
 ## Feature #2
 
 Transfer the Ambient Color to be set received via Uprotocol and Zenoh to the VSS Signal Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide.Color.
+
+## Outlook
+
+Improve that the LLM can access the complete VSS data.

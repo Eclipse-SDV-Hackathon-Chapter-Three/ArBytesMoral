@@ -32,15 +32,12 @@ use up_rust::UTransport;
 struct Args {
     #[clap(long, default_value = "127.0.0.1")]
     host: String,
-    #[clap(long, default_value_t = 2000)]
-    port: u16,
-    #[clap(long, default_value = "ego_vehicle")]
-    role: String,
-    #[clap(long, default_value_t = 0.100)]
-    delta: f64,
     #[clap(long, default_value = None)]
     router: Option<String>,
 }
+
+const TOPIC_TEMP: u16 = 0x8001;
+const TOPIC_WETNESS: u16 = 0x8002;
 
 struct DisplayDatapoint(v2_proto::Value);
 
@@ -128,11 +125,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
         .await?;
 
     loop {
-        let test_payload = format!("{}", 25.5f32);
-        let test_topic = uri_provider.get_resource_uri(0x8001);   
-        let test_message = UMessageBuilder::publish(test_topic.clone())
-            .build_with_payload(test_payload.clone(), UPayloadFormat::UPAYLOAD_FORMAT_TEXT)?;
-        let _ = transport.send(test_message).await;
+        // let test_payload = format!("{}", 25.5f32);
+        // let test_topic = uri_provider.get_resource_uri(TOPIC_TEMP);   
+        // let test_message = UMessageBuilder::publish(test_topic.clone())
+        //     .build_with_payload(test_payload.clone(), UPayloadFormat::UPAYLOAD_FORMAT_TEXT)?;
+        // let _ = transport.send(test_message).await;
 
         let result = v2_client.get_value("Vehicle.Cabin.HVAC.AmbientAirTemperature".to_owned()).await;
         match result {
@@ -143,9 +140,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
                         Some(value) => {
                             let printable = DisplayDatapoint(value);
                             println!("Got value for Vehicle.Cabin.HVAC.AmbientAirTemperature: {:?}", printable.to_string());
-                            // TODO: Publish on uProtocol
-                            //let msg = mqtt::Message::new("compute/color", printable.to_string(), mqtt::QOS_1);
-                            //let _ = mqtt_client.publish(msg).await;
+                            // Publish on uProtocol
+                            let topic = uri_provider.get_resource_uri(TOPIC_TEMP);   
+                            let message = UMessageBuilder::publish(topic.clone())
+                                .build_with_payload(printable.to_string(), UPayloadFormat::UPAYLOAD_FORMAT_TEXT)?;
+                            let _ = transport.send(message).await;
                         },
                         None => {
                             // TODO
@@ -173,9 +172,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
                         Some(value) => {
                             let printable = DisplayDatapoint(value);
                             println!("Got value for Vehicle.Exterior.Humidity: {:?}", printable.to_string());
-                            // TODO: Publish on uProtocol
-                            //let msg = mqtt::Message::new("compute/color", printable.to_string(), mqtt::QOS_1);
-                            //let _ = mqtt_client.publish(msg).await;
+                            // Publish on uProtocol
+                            let topic = uri_provider.get_resource_uri(TOPIC_WETNESS);   
+                            let message = UMessageBuilder::publish(topic.clone())
+                                .build_with_payload(printable.to_string(), UPayloadFormat::UPAYLOAD_FORMAT_TEXT)?;
+                            let _ = transport.send(message).await;
                         },
                         None => {
                             // TODO
