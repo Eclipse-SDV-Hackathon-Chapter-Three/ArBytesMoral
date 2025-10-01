@@ -18,7 +18,7 @@ from agents import Agent, Runner, WebSearchTool, function_tool
 source_rpc = UUri(authority_name="voice-command", ue_id=18)
 transport_rpc = UPTransportZenoh.new(common_uuri.get_zenoh_config(), source_rpc)
 
-source_sub = UUri(authority_name="subscriber", ue_id=9)
+source_sub = UUri(authority_name="car-mate-agents-subscriber", ue_id=9)
 transport_sub = UPTransportZenoh.new(common_uuri.get_zenoh_default_config(), source_sub)
 
 vehicle_data_storage = {}
@@ -48,7 +48,7 @@ async def get_vehicle_data(type: str) -> str:
     """Fetch data from the vehicle.
 
     Args:
-        type: the type of vehicle data to get. Available: outside.humidity, inside.temperature.
+        type: the type of vehicle data to get. Available: outside.humidity, inside.temperature, vehicle.speed, vehicle.position.
     """
     print("-----------------------------AI wants:-----------------------------" + type)
     print(vehicle_data_storage)
@@ -56,6 +56,10 @@ async def get_vehicle_data(type: str) -> str:
         return vehicle_data_storage["outside.humidity"]
     elif type == "inside.temperature":
         return vehicle_data_storage["inside.temperature"]
+    elif type == "vehicle.speed":
+        return vehicle_data_storage["vehicle.speed"]
+    elif type == "vehicle.position":
+        return vehicle_data_storage["vehicle.position"]
     else:
         return "type not supported"
 
@@ -76,7 +80,7 @@ news_general_agent = Agent(
 
 vehicle_data_agent = Agent(
     name="vehicle_data_agent",
-    instructions="Handle vehicle-data related queries to get data. Available: outside.humidity, inside.temperature.",
+    instructions="Handle vehicle-data related queries to get data. Available: outside.humidity, inside.temperature, vehicle.speed, vehicle.position.",
     model="gpt-4o-mini",
     tools=[get_vehicle_data]
 )
@@ -91,7 +95,7 @@ supervisor_agent = Agent(
     name="supervisor_agent",
     instructions="""You are a supervisor agent. When given a request, determine if it is related to vehicle information, vehicle commands, news, other tasks.
     Dispatch the request to the correct sub-agent or tool and return the response.
-    For car Data use vehicle_data_agent, this can provide: outside.humidity, inside.temperature.
+    For car Data use vehicle_data_agent, this can provide: outside.humidity, inside.temperature, vehicle.speed, vehicle.position.
     Use metric units or convert to metric units.
     Try to cheer up the person you are talking to.
     Modify the final respons so it is not longer than 2 sentences and usefull when spoken via tts.""",
@@ -107,7 +111,7 @@ supervisor_agent = Agent(
         # ),
         # vehicle_data_agent.as_tool(
         #     tool_name="vehicle_data",
-        #     tool_description="Handle vehicle-data related queries to get data. Available: outside.humidity, inside.temperature.",
+        #     tool_description="Handle vehicle-data related queries to get data. Available: outside.humidity, inside.temperature, vehicle.speed, vehicle.position.",
         # ),
         # vehicle_command_agent.as_tool(
         #     tool_name="vehicle_command",
@@ -166,10 +170,14 @@ async def register_rpc():
 async def main():
     uuri_8001 = UUri(authority_name="vehicledataaccessor", ue_id=0, ue_version_major=2, resource_id=0x8001)
     uuri_8002 = UUri(authority_name="vehicledataaccessor", ue_id=0, ue_version_major=2, resource_id=0x8002)
+    uuri_8003 = UUri(authority_name="vehicledataaccessor", ue_id=0, ue_version_major=2, resource_id=0x8003)
+    uuri_8004 = UUri(authority_name="vehicledataaccessor", ue_id=0, ue_version_major=2, resource_id=0x8004)
     
     # Prepare the coroutine calls
     task1 = subscribe_to_zenoh_if_subscription_service_is_not_running(uuri_8001, "inside.temperature")
     task2 = subscribe_to_zenoh_if_subscription_service_is_not_running(uuri_8002, "outside.humidity")
+    task2 = subscribe_to_zenoh_if_subscription_service_is_not_running(uuri_8003, "vehicle.speed")
+    task2 = subscribe_to_zenoh_if_subscription_service_is_not_running(uuri_8004, "vehicle.position")
     task3 = register_rpc()
     
     # Run all three concurrently and wait until all finish
