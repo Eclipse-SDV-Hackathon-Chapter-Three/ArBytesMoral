@@ -2,6 +2,11 @@ FROM ghcr.io/astral-sh/uv:python3.12-bookworm as base
 
 WORKDIR /app
 
+RUN apt-get update && apt-get install --no-install-recommends -y espeak-ng \
+        && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN ln -sf /usr/bin/espeak-ng /usr/bin/espeak
+
 COPY . /app
 
 RUN uv venv \

@@ -1,10 +1,8 @@
 # Full Flask app providing Speech-to-Text (STT) and fast Text-to-Speech (TTS).
 # - STT: accepts WAV uploads from the browser and transcribes with SpeechRecognition (Google Web Speech API).
 # - TTS: super fast on Linux using the native `espeak` CLI (WAV on stdout). Falls back to pyttsx3 on non-Linux or if espeak is unavailable.
-
+import asyncio
 import io
-import os
-import tempfile
 import platform
 import subprocess
 from functools import lru_cache
@@ -12,8 +10,7 @@ from functools import lru_cache
 from flask import Flask, request, send_file, jsonify
 import speech_recognition as sr
 
-import asyncio
-
+from uprotocol.communication.calloptions import CallOptions
 from uprotocol.communication.inmemoryrpcclient import InMemoryRpcClient
 from uprotocol.communication.upayload import UPayload
 from uprotocol.v1.uattributes_pb2 import (
@@ -37,7 +34,8 @@ async def send_rpc_request_to_zenoh(data):
     # invoke RPC method
     common_uuri.logging.debug(f"Send request to {uuri}")
     rpc_client = InMemoryRpcClient(transport)
-    response_payload = await rpc_client.invoke_method(uuri, payload)
+    options = CallOptions(timeout=60000)
+    response_payload = await rpc_client.invoke_method(uuri, payload, options)
     common_uuri.logging.debug(f"Response payload {response_payload}")
     return response_payload
 
@@ -136,9 +134,9 @@ def rpc():
     text = (data.get("text") or "").strip()
     print(text)
     answer = asyncio.run(send_rpc_request_to_zenoh(text))
-    print("This is the return of the RPC route:" + answer)
-    
-    return jsonify({"text": answer})
+    answer_text = answer.data.decode('utf-8') if answer.data else ""
+    print(answer_text)
+    return jsonify({"text": answer_text})
 
 @app.route("/tts", methods=["POST"])
 def tts():
