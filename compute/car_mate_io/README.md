@@ -1,36 +1,29 @@
-### CarMate – Speech-to-Text (STT) & Text-to-Speech (TTS) Demo
+# CarMate – Speech-to-Text (STT) & Text-to-Speech (TTS) Demo
+##  build
+`docker build -t car_mate_io:latest .`
 
+## run
+`docker run --rm -it --net=host car_mate_io`
+
+# General
 Voice Command Server — STT + ultra-fast TTS (Flask)
 
 A tiny Flask app that serves:
+- Speech-to-Text (STT): accepts browser-recorded WAV uploads and transcribes via SpeechRecognition (Google Web Speech API).
+- Text-to-Speech (TTS): on Linux, streams WAV directly from espeak (super fast; output cached).
+- RPC bridge: forwards text to a Zenoh/uProtocol RPC service and returns the response.
 
-  Speech-to-Text (STT): accepts browser-recorded WAV uploads and transcribes via SpeechRecognition (Google Web Speech API).
-
-  Text-to-Speech (TTS): on Linux, streams WAV directly from espeak (super fast; output cached).
-
-  RPC bridge: forwards text to a Zenoh/uProtocol RPC service and returns the response.
-
-Features
-
-  STT: expects PCM 16-bit mono 16 kHz WAV; uses Google Web Speech (internet required).
-
-  TTS: calls espeak --stdout → streams WAV without touching disk. LRU-cached (64 entries).
-
-  RPC: async call over uProtocol + Zenoh using InMemoryRpcClient.
-
-  Static UI: serves static/index.html at /.
+Features: 
+-  STT: expects PCM 16-bit mono 16 kHz WAV; uses Google Web Speech (internet required).
+-  TTS: calls espeak --stdout → streams WAV without touching disk. LRU-cached (64 entries).
+-  RPC: async call over uProtocol + Zenoh using InMemoryRpcClient.
+- Static UI: serves static/index.html at /.
 
 ## ⚙️ Requirements
-
 - Python 3.10+ (tested with 3.12)  
 run the docker file after
 
-# Start Container
-docker build -t car_mate_io:latest .
-docker run --rm -it --net=host car_mate_io
-
 ## 🎙️ Enable Microphone
-
 Methods to enable mic use in a non-localhost development web app:
 
 Use HTTPS for your dev server:

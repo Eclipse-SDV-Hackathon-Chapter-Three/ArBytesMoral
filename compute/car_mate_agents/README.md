@@ -1,10 +1,13 @@
-### CarMateAgents
+# CarMateAgents
+##  build
+`docker build -t car_mate_agents:latest .`
+
+## run
+`docker run --rm -it -e OPENAI_API_KEY="$OPENAI_API_KEY" --net=host car_mate_agents`
+
+# General
 
 The **CarMateAgents** acts as an interface between the **CarMateIO** to a LLM and the **Vehicle Data Accessor**. It consists of an supervisor agent that controls different agents using them as tools. For example the generic openai api, an online weather service or vehicle data provided via **Vehicle Data Accessor**.
-
-# Start Container
-build: docker build -t car_mate_agents:latest .
-run: docker run --rm -it -e OPENAI_API_KEY="$OPENAI_API_KEY" --net=host car_mate_agents
 
 # Communication via uProtocol
 
