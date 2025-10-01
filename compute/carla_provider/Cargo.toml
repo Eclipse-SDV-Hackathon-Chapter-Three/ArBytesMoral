@@ -14,6 +14,7 @@ tokio = { version = "1.41", features = [
 ] }
 kuksa-rust-sdk = { git = "https://github.com/eclipse-kuksa/kuksa-rust-sdk.git", branch = "main" }
 carla = "0.11.1"
+log = "0.4"
 
 [patch.crates-io]
 # point the carla crate at your fork/branch

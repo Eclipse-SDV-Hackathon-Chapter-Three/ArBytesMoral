@@ -18,6 +18,14 @@ use kuksa_rust_sdk::kuksa::common::ClientTraitV2;
 use kuksa_rust_sdk::kuksa::val::v2::KuksaClientV2;
 use kuksa_rust_sdk::v2_proto;
 use std::fmt;
+use carla::client::Client;
+use carla::client::ActorBase;
+//use tokio::time::{sleep, Duration};
+use std::sync::atomic::Ordering;
+use log;
+
+const CLIENT_TIME_MS: u64 = 5_000;
+const POLLING_EGO_MS: u64 = 1_000;
 
 struct DisplayDatapoint(v2_proto::Value);
 
@@ -73,8 +81,51 @@ async fn main() {
     let host = "http://localhost:55555";
     let mut v2_client: KuksaClientV2 = KuksaClientV2::from_host(host);
 
-    loop {
+    // Connect to Carla
+    let mut carla_client = Client::connect("192.168.1.1", 2000, None);
 
+    carla_client.set_timeout(Duration::from_millis(CLIENT_TIME_MS));
+
+    // Configure Carla's World
+    let mut carla_world = carla_client.world();
+
+    // Wait for the Ego Vehicle actor
+    let mut ego_vehicle_id: Option<u32> = None;
+
+    while ego_vehicle_id.is_none() {
+        log::info!("Waiting for the Ego Vehicle actor...");
+
+        // Syncronize Carla's world
+        let _ = carla_world.wait_for_tick();
+
+        // Check if the Ego Vehicle actor exists in the world
+        for actor in carla_world.actors().iter() {
+            for attribute in actor.attributes().iter() {
+                if attribute.id() == "role_name"
+                    && attribute.value_string() == "ego_vehicle"
+                {
+                    log::info!(
+                        "Found '{}' actor with id: {}",
+                        "ego_vehicle",
+                        actor.id()
+                    );
+                    ego_vehicle_id = Some(actor.id());
+                    break;
+                }
+            }
+        }
+
+        // Sleep to avoid busy-waiting
+        tokio::time::sleep(Duration::from_millis(POLLING_EGO_MS)).await;
+    }
+
+    let weather = carla_world.weather();
+
+    loop {
+        log::info!(
+                        "Wetness: {}",
+                        weather.wetness
+                    );
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
 }
