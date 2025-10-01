@@ -1,6 +1,6 @@
 # Full Flask app providing Speech-to-Text (STT) and fast Text-to-Speech (TTS).
 # - STT: accepts WAV uploads from the browser and transcribes with SpeechRecognition (Google Web Speech API).
-# - TTS: super fast on Linux using the native `espeak` CLI (WAV on stdout). Falls back to pyttsx3 on non-Linux or if espeak is unavailable.
+# - TTS: super fast on Linux using the native `espeak` CLI (WAV on stdout). *Easteregg for Christian*.
 import asyncio
 import io
 import platform
@@ -144,7 +144,6 @@ def tts():
     Expects JSON: {"text": "...", "voice": "en-us", "rate": 150}
     Returns a WAV stream.
     On Linux: uses espeak (very fast).
-    Otherwise or if espeak is not available: falls back to pyttsx3.
     """
     data = request.get_json(silent=True) or {}
     text = (data.get("text") or "").strip()
