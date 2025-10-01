@@ -1,0 +1,36 @@
+# FROM docker.io/alpine:3.18.4 as compile
+# ENV PATH="/root/.cargo/bin:${PATH}"
+
+# ARG WORKSPACE_DIR=/workspaces/build
+
+# RUN apk update && apk add --update-cache \
+#     curl \
+#     # Development tools
+#     protobuf \
+#     protobuf-dev \
+#     protoc \
+#     build-base \
+#     cmake \
+#     openssl-dev  \
+#     && rm -rf /var/cache/apk/*
+
+# RUN curl --proto '=https' --tlsv1.2 -sS https://sh.rustup.rs | sh -s -- -y > /dev/null
+
+# TODO get musl build working
+
+FROM docker.io/catthehacker/ubuntu:rust-20.04
+
+RUN apt-get update && apt-get install --no-install-recommends -y cmake \
+        clang-12 libclang-12-dev\
+        && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+#COPY . ${WORKSPACE_DIR}/ankaios_sdk
+COPY ./ ${WORKSPACE_DIR}
+WORKDIR ${WORKSPACE_DIR}
+RUN --mount=type=cache,target=${WORKSPACE_DIR}/target/release cargo build --release \
+    && cp ${WORKSPACE_DIR}/target/release/app /usr/local/bin/
+
+ENV RUST_BACKTRACE=full
+ENV RUST_LOG=trace
+
+ENTRYPOINT ["/usr/local/bin/app"]
