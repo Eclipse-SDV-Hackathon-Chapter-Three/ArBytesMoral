@@ -7,5 +7,4 @@ edition = "2024"
 eframe = "^0.31"
 egui_gauge = "0.1.5"
 epaint = "^0.31"
-
-
+tokio = { version = "1.45.1", default-features = false, features = ["full"] }
