@@ -15,28 +15,10 @@ The web frontend (`static/index.html`) uses the browser microphone to record aud
 ## ⚙️ Requirements
 
 - Python 3.10+ (tested with 3.12)  
-- System dependencies for TTS on Linux:
-  ```bash
-  sudo apt update
-  sudo apt install espeak libespeak1 espeak-data
-🚀 Setup
-Clone repository & move into folder
+run the docker file after
+docker build -t car_mate_io .
 
-Create virtual environment
-bash
 
-python3 -m venv .venv
-source .venv/bin/activate   # Linux / macOS
-# On Windows (PowerShell):
-# .venv\Scripts\activate
-
-Install Python dependencies
-bash
-
-pip install -r CarMate/requirements.txt
-▶️ Running the App
-Run with Python (default Flask dev server)
-bash
 
 python3 compute/car_mate_io/app.py
 Opens at: http://localhost:5000
