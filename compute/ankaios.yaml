@@ -55,3 +55,23 @@ workloads:
     runtimeConfig: |
       image: localhost/car-mate-agents:latest
       commandOptions: ["--net=host"]
+  Ankaios_Dashboard:
+    runtime: podman
+    agent: agent_compute
+    restart: true
+    updateStrategy: AT_LEAST_ONCE
+    accessRights:
+      allow: []
+      deny: []
+    restartPolicy: NEVER 
+    dependencies:
+    runtimeConfig: |
+       image: ghcr.io/eclipse-ankaios-dashboard/ankaios-dashboard:latest
+       commandOptions: ["-p", "5001:5001"]
+    controlInterfaceAccess:
+        allowRules:
+          - type: StateRule
+            operation: ReadWrite
+            filterMask:
+              - "desiredState"
+              - "workloadStates"
