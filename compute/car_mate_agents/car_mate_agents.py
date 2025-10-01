@@ -48,8 +48,9 @@ supervisor_agent = Agent(
     name="supervisor_agent",
     instructions="""You are a supervisor agent. When given a request, determine if it is related to vehicle information, vehicle commands, news, other tasks.
     Dispatch the request to the correct sub-agent or tool and return the response. 
-    Use metric units or convert to metric units. 
-    Modify the final respons so it is easy and usefull when spoken via tts.""",
+    Use metric units or convert to metric units.
+    Try to cheer up the person you are talking to.
+    Modify the final respons so it is not longer than 2 sentences and usefull when spoken via tts.""",
     model="gpt-4o-mini",
      tools=[
         news_weather_agent.as_tool(
