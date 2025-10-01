@@ -12,7 +12,7 @@ workloads:
     agent: agent_compute
     runtimeConfig: |
       image: docker.io/library/eclipse-mosquitto
-      commandOptions: ["--net=host", "-v", "/home/gdaniel/sdv/ArBytesMoral/compute/mosquitto/config:/mosquitto/config:ro,Z"]
+      commandOptions: ["--net=host", "-v", "/home/chris/hackathon2025/ArBytesMoral/compute/mosquitto/config:/mosquitto/config"]
   mqtt2kuksa:
     runtime: podman
     dependencies:
