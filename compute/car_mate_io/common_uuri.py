@@ -31,22 +31,12 @@ class ExampleType(Enum):
 
 
 def create_method_uri():
-    return UUri(authority_name="vehicledataaccessor", ue_id=0, ue_version_major=2, resource_id=0x8001)
+    return UUri(authority_name="voice-command", ue_id=18, ue_version_major=1, resource_id=7001)
 
 
 def get_zenoh_config():
-    # start your zenoh router and provide router ip and port
-    zenoh_ip = "192.168.43.241"  # zenoh router ip
-    zenoh_port = 7447  # zenoh router port
     conf = zenoh.Config()
     conf.from_file(path="zenoh.json")
-    # if zenoh_ip is not None:
-    #     endpoint = [f"tcp/{zenoh_ip}:{zenoh_port}"]
-    #     logging.debug(f"EEE: {endpoint}")
-    #     conf.insert_json5("mode", json.dumps("peer"))
-    #     conf.insert_json5("connect", json.dumps(endpoint))
-
-    print(zenoh_ip)
     return conf
 
 

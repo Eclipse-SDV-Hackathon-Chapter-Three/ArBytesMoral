@@ -16,7 +16,7 @@ The web frontend (`static/index.html`) uses the browser microphone to record aud
 
 - Python 3.10+ (tested with 3.12)  
 run the docker file after
-docker build -t car_mate_io .
+docker build -t car_mate_io:latest .
 docker run --rm -it --net=host car_mate_io
 
 
