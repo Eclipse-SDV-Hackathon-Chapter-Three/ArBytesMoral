@@ -115,10 +115,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
 
     // Create a uProtocol URI provider for this vehicle
     // This defines the identity of this node in the uProtocol network
-    let uri_provider = StaticUriProvider::new("VehicleDataAccessor", 42, 1);
+    let uri_provider = StaticUriProvider::new("vehicledataaccessor", 0, 2);
+    let authority = uri_provider.get_authority();
+
+    println!("uProtocol Authority: {:?}", authority);
     
     // Create the uProtocol transport using Zenoh as the underlying transport
-    let transport = UPTransportZenoh::builder(uri_provider.get_authority())
+    let transport = UPTransportZenoh::builder(authority)
         .expect("invalid authority name")
         .with_config(get_zenoh_config())
         .build()
