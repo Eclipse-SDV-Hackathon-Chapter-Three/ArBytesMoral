@@ -12,12 +12,35 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-use tokio::sync::mpsc;
+use clap::Parser;
 use std::time::Duration;
 use kuksa_rust_sdk::kuksa::common::ClientTraitV2;
 use kuksa_rust_sdk::kuksa::val::v2::KuksaClientV2;
 use kuksa_rust_sdk::v2_proto;
 use std::fmt;
+use up_rust::UMessageBuilder;
+use up_transport_zenoh::UPTransportZenoh;
+use up_rust::StaticUriProvider;
+use zenoh::Config;
+use up_rust::LocalUriProvider;
+use up_transport_zenoh::zenoh_config;
+use up_rust::UPayloadFormat;
+use up_rust::UTransport;
+
+#[derive(Parser, Debug)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+    #[clap(long, default_value = "127.0.0.1")]
+    host: String,
+    #[clap(long, default_value_t = 2000)]
+    port: u16,
+    #[clap(long, default_value = "ego_vehicle")]
+    role: String,
+    #[clap(long, default_value_t = 0.100)]
+    delta: f64,
+    #[clap(long, default_value = None)]
+    router: Option<String>,
+}
 
 struct DisplayDatapoint(v2_proto::Value);
 
@@ -62,13 +85,23 @@ impl fmt::Display for DisplayDatapoint {
     }
 }
 
-fn vec_u8_to_f32_from_string(bytes: Vec<u8>) -> f32 {
-    let s = str::from_utf8(&bytes).unwrap_or("");  // Convert, default empty string on error
-    s.trim().parse().unwrap_or(0.0)                // Parse float, return 0.0 on error
+// Helper function to create a Zenoh configuration
+pub(crate) fn get_zenoh_config() -> zenoh_config::Config {
+    let args = Args::parse();
+
+    let zenoh_string = if let Some(router) = &args.router {
+        format!("{{ mode: 'peer', connect: {{ endpoints: [ 'tcp/{}:7447' ] }} }}", router)
+    } else {
+        "{ mode: 'peer' }".to_string()
+    };
+
+    let zenoh_config = Config::from_json5(&zenoh_string).expect("Failed to load Zenoh config");
+
+    zenoh_config
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>>{
 
     // Assumption:
     // - Started after MQTT Broker and Kuksa Data broker
@@ -78,7 +111,28 @@ async fn main() {
     let host = "http://localhost:55555";
     let mut v2_client: KuksaClientV2 = KuksaClientV2::from_host(host);
 
+    // Initialze uProtocol + Zenoh
+
+    // Initialize uProtocol logging
+    UPTransportZenoh::try_init_log_from_env();
+
+    // Create a uProtocol URI provider for this vehicle
+    // This defines the identity of this node in the uProtocol network
+    let uri_provider = StaticUriProvider::new("VehicleDataAccessor", 42, 1);
+    
+    // Create the uProtocol transport using Zenoh as the underlying transport
+    let transport = UPTransportZenoh::builder(uri_provider.get_authority())
+        .expect("invalid authority name")
+        .with_config(get_zenoh_config())
+        .build()
+        .await?;
+
     loop {
+        let test_payload = format!("{}", 25.5f32);
+        let test_topic = uri_provider.get_resource_uri(0x8001);   
+        let test_message = UMessageBuilder::publish(test_topic.clone())
+            .build_with_payload(test_payload.clone(), UPayloadFormat::UPAYLOAD_FORMAT_TEXT)?;
+        let _ = transport.send(test_message).await;
 
         let result = v2_client.get_value("Vehicle.Cabin.HVAC.AmbientAirTemperature".to_owned()).await;
         match result {
