@@ -1,0 +1,11 @@
+[package]
+name = "rust_tacho_gui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+eframe = "^0.31"
+egui_gauge = "0.1.5"
+epaint = "^0.31"
+
+
