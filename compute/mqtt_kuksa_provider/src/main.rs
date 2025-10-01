@@ -15,12 +15,9 @@
 use paho_mqtt::{self as mqtt};
 use tokio::sync::mpsc;
 use std::time::Duration;
-use kuksa_rust_sdk::kuksa::common;
 use kuksa_rust_sdk::kuksa::common::ClientTraitV2;
 use kuksa_rust_sdk::kuksa::val::v2::KuksaClientV2;
 use kuksa_rust_sdk::v2_proto;
-
-use kuksa_rust_sdk::proto::kuksa::val::v2::value::TypedValue;
 use std::fmt;
 
 struct DisplayDatapoint(v2_proto::Value);
@@ -66,6 +63,11 @@ impl fmt::Display for DisplayDatapoint {
     }
 }
 
+fn vec_u8_to_f32_from_string(bytes: Vec<u8>) -> f32 {
+    let s = str::from_utf8(&bytes).unwrap_or("");  // Convert, default empty string on error
+    s.trim().parse().unwrap_or(0.0)                // Parse float, return 0.0 on error
+}
+
 #[tokio::main]
 async fn main() {
 
@@ -83,11 +85,11 @@ async fn main() {
     println!("Connecting to the MQTT server at '{}'", host);
 
     // Create the client
-    let mut mqtt_client = mqtt::AsyncClient::new(host).unwrap();
+    let mqtt_client = mqtt::AsyncClient::new(host).unwrap();
 
     // Connect with default options and wait for it to complete or fail
     // The default is an MQTT v3.x connection.
-    mqtt_client.connect(None).await;
+    let _ = mqtt_client.connect(None).await;
 
     mqtt_client.subscribe("mcu/temperature", 1).wait().unwrap();
 
@@ -102,51 +104,14 @@ async fn main() {
         }
     });
 
-    // Wait asynchronously for the message on the oneshot receiver
-
-    // We listen for the Ambient Light Color Data Updates
-    // match common::ClientTraitV2::subscribe(
-    //     &mut v2_client,
-    //     vec!["Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide.Color".to_owned()],
-    //     None,
-    //     None,
-    // )
-    // .await
-    // {
-    //     Ok(mut stream) => {
-    //         println!("Successfully subscribed to {:?}!", "Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide");
-    //         tokio::spawn(async move {
-    //             match stream.message().await {
-    //                 Ok(option) => {
-    //                     let response = option.unwrap();
-    //                     for entry_update in response.entries {
-    //                         let datapoint = entry_update.1;
-    //                         println!("Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide: {datapoint:?}");
-    //                     }
-    //                 }
-    //                 Err(err) => {
-    //                     println!("Error: Could not receive response {err:?}");
-    //                 }
-    //             }
-    //         });
-    //     }
-    //     Err(err) => {
-    //         println!("Failed to subscribe to {:?}: {:?}", "Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide", err);
-    //     }
-    // }
-
-
-
     loop {
-
         match rx.try_recv() {
             Ok(msg) => {
                 println!("Got message: {:?}", msg);
-                // TODO Write to correct vss signal
-                v2_client.publish_value(
-                    "Vehicle.Speed".to_owned(),
+                let _ =v2_client.publish_value(
+                    "Vehicle.Cabin.HVAC.AmbientAirTemperature".to_owned(),
                     v2_proto::Value {
-                        typed_value: Some(v2_proto::value::TypedValue::Float(30.0)),
+                        typed_value: Some(v2_proto::value::TypedValue::Float(vec_u8_to_f32_from_string(msg))),
                     },
                 ).await;
             }
