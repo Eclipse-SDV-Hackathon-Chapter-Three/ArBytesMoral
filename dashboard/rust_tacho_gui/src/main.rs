@@ -23,22 +23,43 @@ mod common;
 
 use async_trait::async_trait;
 use std::{str::FromStr, sync::Arc};
+use tokio::sync::mpsc;
 use up_rust::{UListener, UMessage, UTransport, UUri};
 use up_transport_zenoh::UPTransportZenoh;
 
 const CONFIG_PATH: &str = "src/zenoh_config.json";
 
-struct SubscriberListener(tokio::runtime::Runtime);
+#[derive(Clone, Debug)]
+struct GuiUpdate {
+    uri: String,
+    payload: String,
+    timestamp: std::time::SystemTime,
+}
+
+struct SubscriberListener {
+    message_processing_rt: tokio::runtime::Runtime,
+    gui_sender: mpsc::UnboundedSender<GuiUpdate>,
+}
 #[async_trait]
 impl UListener for SubscriberListener {
     async fn on_receive(&self, msg: UMessage) {
-        // Offload processing of the message to a dedicated tokio runtime using
-        // threads not used by Zenoh.
-        self.0.spawn(async move {
+        let gui_tx = self.gui_sender.clone();
+
+        self.message_processing_rt.spawn(async move {
             let payload = msg.payload.unwrap();
             let value = String::from_utf8(payload.to_vec()).unwrap();
             let uri = msg.attributes.unwrap().source.unwrap().to_uri(false);
+
             println!("Received message [topic: {uri}, payload: {value}]");
+
+            // Sende Update an GUI-Thread
+            let update = GuiUpdate {
+                uri,
+                payload: value,
+                timestamp: std::time::SystemTime::now(),
+            };
+
+            let _ = gui_tx.send(update);
         });
     }
 }
@@ -49,6 +70,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     UPTransportZenoh::try_init_log_from_env();
 
     println!("uProtocol subscriber example");
+
+    // Channel für GUI-Updates erstellen
+    let (gui_tx, mut gui_rx) = mpsc::unbounded_channel::<GuiUpdate>();
+
+    // GUI-Thread starten (Beispiel mit std::thread)
+    let gui_thread = std::thread::Builder::new()
+        .name("gui-thread".to_string())
+        .spawn(move || {
+            // Hier die GUI-Runtime (z.B. egui, iced, gtk-rs)
+            run_gui(gui_rx);
+        })?;
+
     let transport = UPTransportZenoh::builder("subscriber")
         .expect("invalid authority name")
         .with_config_path(CONFIG_PATH.to_string())
@@ -77,9 +110,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .register_listener(
             &source_filter,
             None,
-            Arc::new(SubscriberListener(message_processing_rt)),
+            Arc::new(SubscriberListener {
+                message_processing_rt,
+                gui_sender: gui_tx,
+            }),
         )
         .await?;
 
     tokio::signal::ctrl_c().await.map_err(Box::from)
+}
+
+fn run_gui(mut receiver: mpsc::UnboundedReceiver<GuiUpdate>) {
+    // GUI-Initialisierung hier
+    // Beispiel für eine einfache Schleife
+    while let Some(update) = receiver.blocking_recv() {
+        println!("[GUI] Update: {} - {}", update.uri, update.payload);
+        // GUI-Elemente hier aktualisieren
+    }
 }
