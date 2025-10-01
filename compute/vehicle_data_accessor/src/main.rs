@@ -92,6 +92,8 @@ pub(crate) fn get_zenoh_config() -> zenoh_config::Config {
         "{ mode: 'peer' }".to_string()
     };
 
+    println!("Zenoh String: {:?}", zenoh_string);
+
     let zenoh_config = Config::from_json5(&zenoh_string).expect("Failed to load Zenoh config");
 
     zenoh_config
@@ -147,7 +149,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
                             let topic = uri_provider.get_resource_uri(TOPIC_TEMP);   
                             let message = UMessageBuilder::publish(topic.clone())
                                 .build_with_payload(printable.to_string(), UPayloadFormat::UPAYLOAD_FORMAT_TEXT)?;
-                            let _ = transport.send(message).await;
+                            transport.send(message).await?;
                         },
                         None => {
                             // TODO
@@ -179,7 +181,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
                             let topic = uri_provider.get_resource_uri(TOPIC_WETNESS);   
                             let message = UMessageBuilder::publish(topic.clone())
                                 .build_with_payload(printable.to_string(), UPayloadFormat::UPAYLOAD_FORMAT_TEXT)?;
-                            let _ = transport.send(message).await;
+                            transport.send(message).await?;
                         },
                         None => {
                             // TODO
