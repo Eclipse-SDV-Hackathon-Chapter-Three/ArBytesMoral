@@ -1,0 +1,6 @@
+{
+    "rust-analyzer.linkedProjects": [
+        "mcu_sw/threadx-rust/Cargo.toml",
+        "mcu_sw/threadx-rust/threadx-app/cross/Cargo.toml",
+    ]
+}
