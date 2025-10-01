@@ -190,41 +190,6 @@ def tts():
 
 
 # -----------------------------
-# Optional: legacy local mic command listener
-# (Not used by the web UI; kept here for reference. Uses pyttsx3 on demand.)
-# -----------------------------
-def listen_for_command(mic_index: int = 2):
-    """Listen for a command after the hotword (local machine microphone)."""
-    try:
-        with sr.Microphone(device_index=mic_index) as source:
-            print("Speak your command …")
-            audio = r.listen(source)
-            try:
-                command = r.recognize_google(audio, language="en-US")
-                print("Recognized:", command)
-                return command
-            except sr.UnknownValueError:
-                print("❌ Could not understand audio.")
-                try:
-                    engine = _get_pyttsx3()
-                    engine.say("Sorry, I did not understand you.")
-                    engine.runAndWait()
-                except Exception:
-                    pass
-            except sr.RequestError as e:
-                print(f"❌ API error: {e}")
-                try:
-                    engine = _get_pyttsx3()
-                    engine.say("There was an error processing your request.")
-                    engine.runAndWait()
-                except Exception:
-                    pass
-    except Exception as e:
-        print(f"Microphone error: {e}")
-    return None
-
-
-# -----------------------------
 # Main
 # -----------------------------
 if __name__ == "__main__":
