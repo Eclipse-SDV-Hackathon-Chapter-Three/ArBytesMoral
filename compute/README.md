@@ -34,3 +34,17 @@ The **Eclipse Mosquitto MQTT Broker** provides the messaging service that acts a
 The **MQTT Kuksa Provider** acts as a bi-directional bridge between the Eclipse Mosquitto MQTT Broker and the Eclipse Kuksa DataBroker. It facilitates seamless communication between the MCU node and the centralized vehicle data model by translating MQTT messages to VSS signals and vice versa.
 
 Further details can be found in the related README.md.
+
+### CarMateIO
+
+The **CarMateIO** acts as an interface to the driver by hosting an webapp where the driver can talk with his car or give commands to gain information on its surroundings. The main Feature is Speech to Text (STT) and Text to Speech (TTS). The App talks to **CarMateAgents** that connects to a LLM and the **Vehicle Data Accessor**. 
+
+Further details can be found in the related README.md.
+
+### CarMateAgents
+
+The **CarMateAgents** acts as an interface between the **CarMateIO** to a LLM and the **Vehicle Data Accessor**. It consists of an supervisor agent that controls different agents using tool. For example the generic openai api, an online weather service or vehicle data provided via **Vehicle Data Accessor**.
+
+Further details can be found in the related README.md.
+
+

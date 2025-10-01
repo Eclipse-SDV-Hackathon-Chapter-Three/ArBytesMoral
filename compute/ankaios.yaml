@@ -22,3 +22,20 @@ workloads:
     runtimeConfig: |
       image: localhost/mqtt-kuksa-provider:latest
       commandOptions: ["--net=host"]
+  CarMateIO:
+    runtime: podman
+    dependencies:
+      zenohRouter: ADD_COND_RUNNING
+    agent: agent_compute
+    runtimeConfig: |
+      image: localhost/car-mate-io:latest
+      commandOptions: ["--net=host"]
+  CarMateAgents:
+    runtime: podman
+    dependencies:
+      zenohRouter: ADD_COND_RUNNING
+      vehilceDataAccessor: ADD_COND_RUNNING
+    agent: agent_compute
+    runtimeConfig: |
+      image: localhost/car-mate-agents:latest
+      commandOptions: ["--net=host"]
