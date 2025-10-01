@@ -38,3 +38,5 @@ Further details can be found in the related README.md.
 ### CARLA Provider
 
 The **CARLA Provider** demonstrates a practical bridge between CARLA and KUKSA Databroker (on the same or different machines). The Provider connects to a CARLA simulator, starts a Traffic Manager and spawns a vehicle with an autopilot driving it. Moreover it gently changes the weather over time. It reads back the wetness and pusblishes it to KUKSA Databroker as VSS conform value.
+
+Further details can be found in the related README.md.
