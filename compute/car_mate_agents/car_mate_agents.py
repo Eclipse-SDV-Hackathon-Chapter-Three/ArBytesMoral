@@ -1,8 +1,6 @@
 import asyncio
 import threading
-from agents import Agent, Runner
-from agents.tool import Tool
-
+from agents import Agent, Runner, WebSearchTool
 
 from uprotocol.communication.inmemoryrpcserver import InMemoryRpcServer
 from uprotocol.communication.requesthandler import RequestHandler
@@ -23,7 +21,8 @@ transport = UPTransportZenoh.new(get_zenoh_default_config(), source)
 news_weather_agent = Agent(
     name="news_weather_agent",
     instructions="Give the current weather.",
-    model="gpt-4o-mini"
+    model="gpt-4o-mini",
+    tools=[WebSearchTool()]
 )
 
 vehicle_data_agent = Agent(
@@ -41,7 +40,9 @@ vehicle_command_agent = Agent(
 supervisor_agent = Agent(
     name="supervisor_agent",
     instructions="""You are a supervisor agent. When given a request, determine if it is related to vehicle information, vehicle commands, news, other tasks.
-    Dispatch the request to the correct sub-agent or tool and return the response.""",
+    Dispatch the request to the correct sub-agent or tool and return the response. 
+    Use metric units or convert to metric units. 
+    Modify the final respons so it is easy and usefull when spoken via tts.""",
     model="gpt-4o-mini",
      tools=[
         news_weather_agent.as_tool(
@@ -58,57 +59,6 @@ supervisor_agent = Agent(
         ),
     ],
 )
-
-# def get_vehicle_status(vehicle_id: str) -> str:
-#     # Access vehicle database or API to fetch status
-#     return f"Vehicle {vehicle_id} is operational with all systems normal."
-
-# def execute_voice_command(command: str) -> str:
-#     # Perform voice command action or simulate execution
-#     return f"Executed voice command: {command}"
-
-# vehicle_data_agent.tools = [get_vehicle_status]
-# vehicle_command_agent.tools = [execute_voice_command]
-
-
-# # Define tools wrapping sub-agents
-# def news_weather_agent_tool(input_text: str) -> str:
-#     result = Runner.run_sync(news_weather_agent, input_text)
-#     return result.final_output
-
-# def vehicle_data_agent_tool(input_text: str) -> str:
-#     result = Runner.run_sync(vehicle_data_agent, input_text)
-#     return result.final_output
-
-# def vehicle_command_agent_tool(input_text: str) -> str:
-#     result = Runner.run_sync(vehicle_command_agent, input_text)
-#     return result.final_output
-
-# # Define your tools properly
-# news_weather_tool = Tool(
-#     name="news_weather_agent",
-#     func=news_weather_agent_tool,
-#     description="Handles weather news queries"
-# )
-
-# vehicle_data_tool = Tool(
-#     name="vehicle_data_agent",
-#     func=vehicle_data_agent_tool,
-#     description="Handles vehicle-data related queries"
-# )
-
-# vehicle_command_tool = Tool(
-#     name="vehicle_command_agent",
-#     func=vehicle_command_agent_tool,
-#     description="Handles vehicle-control related queries"
-# )
-
-# # Assign Tool instances to supervisor_agent.tools
-# supervisor_agent.tools = [
-#     news_weather_tool,
-#     vehicle_data_tool,
-#     vehicle_command_tool,
-# ]
 
 class MyRequestHandler(RequestHandler):
     def handle_request(self, msg: UMessage) -> UPayload:
@@ -131,6 +81,8 @@ class MyRequestHandler(RequestHandler):
             thread.join()  # Wait for completion
             
             voice_answer = result[0]
+
+            print("voice_answer" + voice_answer)
             
             return UPayload(
                 data=voice_answer.encode('utf-8'),
