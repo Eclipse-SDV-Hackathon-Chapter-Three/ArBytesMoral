@@ -11,7 +11,7 @@ struct GaugeExample {
     value: u64,
     settings: bool,
     receiver: Receiver<u64>,
-    _runtime: Arc<tokio::runtime::Runtime>,
+    runtime: Arc<tokio::runtime::Runtime>,
 }
 
 impl GaugeExample {
