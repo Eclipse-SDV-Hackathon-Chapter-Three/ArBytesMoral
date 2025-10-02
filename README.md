@@ -125,6 +125,7 @@ Development is conducted on feature branches, and all changes are reviewed using
 > Explain why these changes were necessary and what problem they solve.
 > 
 > ## 🛠️ Testing:
+> - [ ] no testing needed (e.g. Readme)  
 > - [ ] local testing  
 > - [ ] some intergation tests  
 > - [ ] full integration tests  
