@@ -38,6 +38,10 @@ struct Args {
 
 const TOPIC_TEMP: u16 = 0x8001;
 const TOPIC_WETNESS: u16 = 0x8002;
+const TOPIC_SPEED: u16 = 0x8003;
+const TOPIC_POS_LAT: u16 = 0x8004;
+const TOPIC_POS_LON: u16 = 0x8005;
+const TOPIC_POS_ALT: u16 = 0x8006;
 
 struct DisplayDatapoint(v2_proto::Value);
 
@@ -200,6 +204,134 @@ async fn main() -> Result<(), Box<dyn std::error::Error>>{
             }
         }
 
+        let result = v2_client.get_value("Vehicle.Speed".to_owned()).await;
+        match result {
+            Ok(option) => match option {
+                Some(datapoint) => {
+                    println!("Vehicle.Speed: {:?}", datapoint.value);
+                    match datapoint.value {
+                        Some(value) => {
+                            let printable = DisplayDatapoint(value);
+                            println!("Got value for Vehicle.Speed: {:?}", printable.to_string());
+                            // Publish on uProtocol
+                            let topic = uri_provider.get_resource_uri(TOPIC_SPEED);   
+                            let message = UMessageBuilder::publish(topic.clone())
+                                .build_with_payload(printable.to_string(), UPayloadFormat::UPAYLOAD_FORMAT_TEXT)?;
+                            transport.send(message).await?;
+                        },
+                        None => {
+                            // TODO
+                        }
+                    }
+                }
+                None => {
+                    println!("Vehicle.Speed not set");
+                }
+            },
+            Err(err) => {
+                println!(
+                    "Getting value for signal {:?} failed: {:?}",
+                    "Vehicle.Speed", err
+                );
+            }
+        }
+
+        let result = v2_client.get_value("Vehicle.CurrentLocation.Latitude".to_owned()).await;
+        match result {
+            Ok(option) => match option {
+                Some(datapoint) => {
+                    println!("Vehicle.CurrentLocation.Latitude: {:?}", datapoint.value);
+                    match datapoint.value {
+                        Some(value) => {
+                            let printable = DisplayDatapoint(value);
+                            println!("Got value for Vehicle.CurrentLocation.Latitude: {:?}", printable.to_string());
+                            // Publish on uProtocol
+                            let topic = uri_provider.get_resource_uri(TOPIC_POS_LAT);   
+                            let message = UMessageBuilder::publish(topic.clone())
+                                .build_with_payload(printable.to_string(), UPayloadFormat::UPAYLOAD_FORMAT_TEXT)?;
+                            transport.send(message).await?;
+                        },
+                        None => {
+                            // TODO
+                        }
+                    }
+                }
+                None => {
+                    println!("Vehicle.CurrentLocation.Latitude not set");
+                }
+            },
+            Err(err) => {
+                println!(
+                    "Getting value for signal {:?} failed: {:?}",
+                    "Vehicle.CurrentLocation.Latitude", err
+                );
+            }
+        }
+
+        let result = v2_client.get_value("Vehicle.CurrentLocation.Longitude".to_owned()).await;
+        match result {
+            Ok(option) => match option {
+                Some(datapoint) => {
+                    println!("Vehicle.CurrentLocation.Longitude: {:?}", datapoint.value);
+                    match datapoint.value {
+                        Some(value) => {
+                            let printable = DisplayDatapoint(value);
+                            println!("Got value for Vehicle.CurrentLocation.Longitude: {:?}", printable.to_string());
+                            // Publish on uProtocol
+                            let topic = uri_provider.get_resource_uri(TOPIC_POS_LON);   
+                            let message = UMessageBuilder::publish(topic.clone())
+                                .build_with_payload(printable.to_string(), UPayloadFormat::UPAYLOAD_FORMAT_TEXT)?;
+                            transport.send(message).await?;
+                        },
+                        None => {
+                            // TODO
+                        }
+                    }
+                }
+                None => {
+                    println!("Vehicle.CurrentLocation.Longitude not set");
+                }
+            },
+            Err(err) => {
+                println!(
+                    "Getting value for signal {:?} failed: {:?}",
+                    "Vehicle.CurrentLocation.Longitude", err
+                );
+            }
+        }
+
+        let result = v2_client.get_value("Vehicle.CurrentLocation.Altitude".to_owned()).await;
+        match result {
+            Ok(option) => match option {
+                Some(datapoint) => {
+                    println!("Vehicle.CurrentLocation.Altitude: {:?}", datapoint.value);
+                    match datapoint.value {
+                        Some(value) => {
+                            let printable = DisplayDatapoint(value);
+                            println!("Got value for Vehicle.CurrentLocation.Altitude: {:?}", printable.to_string());
+                            // Publish on uProtocol
+                            let topic = uri_provider.get_resource_uri(TOPIC_POS_ALT);   
+                            let message = UMessageBuilder::publish(topic.clone())
+                                .build_with_payload(printable.to_string(), UPayloadFormat::UPAYLOAD_FORMAT_TEXT)?;
+                            transport.send(message).await?;
+                        },
+                        None => {
+                            // TODO
+                        }
+                    }
+                }
+                None => {
+                    println!("Vehicle.CurrentLocation.Altitude not set");
+                }
+            },
+            Err(err) => {
+                println!(
+                    "Getting value for signal {:?} failed: {:?}",
+                    "Vehicle.CurrentLocation.Altitude", err
+                );
+            }
+        }
+       
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
 }
