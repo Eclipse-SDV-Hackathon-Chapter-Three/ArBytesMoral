@@ -112,6 +112,35 @@ Essential documentation is added to the corresponding README.md files within the
 Feature Branch Workflow with Quick Reviews:
 Development is conducted on feature branches, and all changes are reviewed using the 4-eyes principle (peer review by at least one other team member) to quickly maintain code quality and catch potential issues early.
 
+### Pull Request Template
+> ## 🚀 Summary:  
+> Briefly describe the purpose of this PR and what it accomplishes.
+> 
+> ## 🔍 Changes Made:  
+> - Added feature X to module Y  
+> - Refactored component Z for better performance  
+> - Updated unit tests for A and B
+> 
+> ## 🧠 Reasoning: 
+> Explain why these changes were necessary and what problem they solve.
+> 
+> ## 🛠️ Testing:
+> - [ ] no testing needed (e.g. Readme)  
+> - [ ] local testing  
+> - [ ] some intergation tests  
+> - [ ] full integration tests  
+> 
+> ## 📋 Checklist:
+> - [ ] Code follows the project’s style guide  
+> - [ ] Readme/Documentation updated  
+> - [ ] Tested
+
+###  Coding Style
+- snake_case where possible
+- Use meaningful variable, function, and type names. Avoid single-letter names unless in tight loops or mathematical contexts.
+- Don’t explain the obvious. Instead, clarify intent, edge cases, or non-obvious decisions.
+- Write concise, descriptive commit messages. Group related changes together.
+
 ## Communication  
 
 We hold regular group meetings (approximately every 1-2 hours) to align on the current status of tasks and progress (Huddle Meetings).
