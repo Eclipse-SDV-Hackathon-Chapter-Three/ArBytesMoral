@@ -9,6 +9,7 @@ clap = { version = "4.5.42", features = ["derive"] }
 eframe = "^0.31"
 egui_gauge = "0.1.5"
 epaint = "^0.31"
+parking_lot = "0.12.4"
 serde_json = "1.0.145"
 tokio = { version = "1.45.1", default-features = false, features = ["full"] }
 up-rust = "0.7.1"
