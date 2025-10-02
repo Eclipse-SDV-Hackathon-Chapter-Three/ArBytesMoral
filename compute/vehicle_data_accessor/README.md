@@ -1,6 +1,11 @@
 # Vehicle Data Accessor
-
 The **Vehicle Data Accessor** connects the Eclipse Kuksa DataBroker with **Eclipse uProtocol** and **Eclipse Zenoh**, enabling the CarMate application to interact seamlessly with the VSS (Vehicle Signal Specification) data model.
+
+##  build
+`docker build -t vda:latest .`
+
+## run
+`docker run --rm -it --net=host vda`
 
 ## Feature #1
 
