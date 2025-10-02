@@ -14,14 +14,17 @@
 
 use std::sync::{
     atomic::{AtomicBool, Ordering},
-    Arc,
+    Arc
 };
+use std::sync::Mutex as StdMutex;
 use std::time::Duration;
 
-use carla::client::{Client, Vehicle};
+use carla::client::{ActorBase, Sensor, Client, Vehicle};
+use carla::rpc::AttachmentType;
 use kuksa_rust_sdk::kuksa::common::ClientTraitV2;
 use kuksa_rust_sdk::kuksa::val::v2::KuksaClientV2;
 use kuksa_rust_sdk::v2_proto;
+use nalgebra::{Vector3, Isometry3, Translation3, UnitQuaternion};
 use tokio::{sync::Mutex, time::sleep};
 
 const CLIENT_TIME_MS: u64 = 5_000;
@@ -31,6 +34,53 @@ const TM_PORT: u16 = 8000;
 const KUKSA_HOST: &str = "http://192.168.43.241:55555";
 // const KUKSA_HOST: &str = "http://localhost:55555";
 
+// Shared GNSS state (updated by sensor listener, read by tick loop)
+#[derive(Default, Clone)]
+struct GnssState {
+    lat: f64,
+    lon: f64,
+    alt: f64,
+}
+
+// Velocity to speed_kmh conversion
+fn velocity_to_speed_kmh(v: Vector3<f32>) -> f32 {
+    let speed_ms = v.norm();
+    speed_ms * 3.6
+}
+
+// KUKSA single-signal publisher as float (call this once per signal)
+async fn publish_float_signal(client: Arc<Mutex<KuksaClientV2>>, path: &str, value: f32) {
+    let mut c = client.lock().await;
+    if let Err(e) = c
+        .publish_value(
+            path.to_owned(),
+            v2_proto::Value {
+                typed_value: Some(v2_proto::value::TypedValue::Float(value)),
+            },
+        )
+        .await
+    {
+        log::warn!("Publish {path} failed: {e}");
+    }
+}
+
+// KUKSA single-signal publisher as double (call this once per signal)
+async fn publish_double_signal(client: Arc<Mutex<KuksaClientV2>>, path: &str, value: f64) {
+    let mut c = client.lock().await;
+    if let Err(e) = c
+        .publish_value(
+            path.to_owned(),
+            v2_proto::Value {
+                typed_value: Some(v2_proto::value::TypedValue::Double(value)),
+            },
+        )
+        .await
+    {
+        log::warn!("Publish {path} failed: {e}");
+    }
+}
+
+// Main
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Logging
@@ -72,18 +122,69 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         carla_settings.fixed_delta_seconds
     );
 
+    // Map & blueprints
+    let carla_map = carla_world.map();
+    let bp_lib = carla_world.blueprint_library();
+
+    // Vehicle and GNSS handle
+    let mut carla_vehicle: Option<Vehicle> = None;
+    let gnss_state = Arc::new(StdMutex::new(GnssState::default()));
+    let mut gnss_keepalive: Option<Sensor> = None;
+
     // Spawn a vehicle and enable autopilot bound to our TM port
-    if let Some(spawn) = carla_world.map().recommended_spawn_points().get(0) {
-        if let Some(bp) = carla_world
-            .blueprint_library()
-            .find("vehicle.mercedes.coupe_2020")
+    if let Some(spawn) = carla_map.recommended_spawn_points().get(0) {
+        if let Some(veh_bp) = bp_lib.find("vehicle.mercedes.coupe_2020")
         {
-            let actor = carla_world.spawn_actor(&bp, &spawn)?;
+            let actor = carla_world.spawn_actor(&veh_bp, &spawn)?;
             let vehicle: Vehicle = actor
                 .try_into()
                 .expect("Spawned actor is not a vehicle (check blueprint)");
+
+            // Attach GNSS as child sensor and listen to data
+            if let Some(mut gnss_bp) = bp_lib.find("sensor.other.gnss") {
+                // (optional) align sensor rate with your world tick (0.05s = 20 Hz)
+                let _ = gnss_bp.set_attribute("sensor_tick", "0.05");
+
+                // relative pose on the roof
+                let rel_tf: Isometry3<f32> = Isometry3::from_parts(
+                    Translation3::new(0.0, 0.0, 1.8),
+                    UnitQuaternion::identity(),
+                );
+
+                // Attach the sensor to the vehicle using World::spawn_actor_opt
+                let gnss_actor = carla_world.spawn_actor_opt(
+                    &gnss_bp,
+                    &rel_tf,
+                    Some(&vehicle),          // parent reference
+                    AttachmentType::Rigid,   // keep it rigidly attached
+                )?;
+
+                // Turn the Actor into a Sensor and start listening
+                let gnss_sensor: Sensor = gnss_actor.try_into()
+                    .expect("GNSS actor is not a Sensor");
+                gnss_keepalive = Some(gnss_sensor);
+
+                // Register listener on the kept handle (no unwrap)
+                if let Some(sensor) = gnss_keepalive.as_ref() {
+                    let gnss_state_clone = Arc::clone(&gnss_state);
+                    sensor.listen(move |data: carla::sensor::SensorData| {
+                        if let Ok(m) = carla::sensor::data::GnssMeasurement::try_from(data) {
+                            if let Ok(mut s) = gnss_state_clone.lock() {
+                                s.lat = m.latitude();
+                                s.lon = m.longitude();
+                                s.alt = m.geo_location().altitude;
+                            }
+                        }
+                    });
+                }
+            } else {
+                log::warn!("GNSS blueprint not found");
+            }
+
             vehicle.set_autopilot_opt(true, TM_PORT);
             log::info!("Vehicle spawned and autopilot enabled on TM port {}", TM_PORT);
+
+            carla_vehicle = Some(vehicle);
         } else {
             log::error!("Vehicle blueprint not found");
         }
@@ -116,32 +217,68 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
             }
 
-            carla_weather.wetness = cnt as f32; // range 0..20 (CARLA accepts 0..100)
-            log::info!("Wetness: {}", carla_weather.wetness);
+            // Get current weather conditions from CARLA
+            carla_weather = carla_world.weather();
 
-            // Apply weather immediately (never await in the tick path)
+            // Defaults if no vehicle is available
+            let mut speed_kmh: f32 = 0.0;
+            let (mut lat, mut lon, mut alt) = (0.0f32, 0.0f32, 0.0f32);
+
+            // If we have a vehicle, read speed
+            if let Some(ref vehicle) = carla_vehicle {
+                speed_kmh = velocity_to_speed_kmh(vehicle.velocity());
+            }
+
+            // Read latest GNSS values from shared state
+            if let Ok(s) = gnss_state.lock() {
+                lat = s.lat as f32;
+                lon = s.lon as f32;
+                alt = s.alt as f32;
+            }
+
+            log::info!(
+                "Speed: {:.1} km/h | lat: {:.6}, lon: {:.6}, alt: {:.1} m",
+                speed_kmh,
+                lat,
+                lon,
+                alt
+            );
+
+            // Update & apply weather
+            carla_weather.wetness = cnt as f32; // 0..20 (CARLA accepts 0..100)
+            log::info!("Wetness: {} %", carla_weather.wetness);
             carla_world.set_weather(&carla_weather);
 
-            // Offload KUKSA publish so the tick loop never blocks on I/O
-            let val = carla_weather.wetness;
-            let v2 = Arc::clone(&v2_client);
+            // Capture scalars for async publish
+            let wet = carla_weather.wetness;
+            let client = Arc::clone(&v2_client);
+
+            // Offload 5 publishes using the single helper (non-blocking)
             tokio::spawn(async move {
-                let mut client = v2.lock().await;
-                if let Err(e) = client
-                    .publish_value(
-                        "Vehicle.Exterior.Humidity".to_owned(),
-                        v2_proto::Value {
-                            typed_value: Some(v2_proto::value::TypedValue::Float(val)),
-                        },
-                    )
-                    .await
-                {
-                    log::warn!("publish_value failed: {e}");
-                }
+                publish_float_signal(Arc::clone(&client), "Vehicle.Exterior.Humidity", wet).await;
+                publish_float_signal(Arc::clone(&client), "Vehicle.Speed", speed_kmh).await;
+                publish_double_signal(
+                    Arc::clone(&client),
+                    "Vehicle.CurrentLocation.Latitude",
+                    lat as f64,
+                )
+                .await;
+                publish_double_signal(
+                    Arc::clone(&client),
+                    "Vehicle.CurrentLocation.Longitude",
+                    lon as f64,
+                )
+                .await;
+                publish_double_signal(
+                    Arc::clone(&client),
+                    "Vehicle.CurrentLocation.Altitude",
+                    alt as f64,
+                )
+                .await;
             });
         }
 
-        // Light CPU throttle (simulation time advances only via tick())
+        // CPU throttle (simulation time advances only via tick())
         sleep(Duration::from_millis(50)).await;
 
         // Sync advance: world then Traffic Manager
@@ -149,7 +286,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let _ = carla_tm.synchronous_tick();
     }
 
-    // Cleanup: restore async world settings
+    // Cleanup sensor
+    if let Some(sensor) = gnss_keepalive.take() {
+        // Stop delivering callbacks
+        sensor.stop();
+    }
+
+    // Restore async world settings
     let mut s = carla_world.settings();
     s.synchronous_mode = false;
     s.fixed_delta_seconds = None;
