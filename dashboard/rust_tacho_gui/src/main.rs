@@ -4,8 +4,8 @@ use async_trait::async_trait;
 use eframe::egui;
 use egui_gauge::Gauge;
 use epaint::Color32;
-use std::sync::Mutex;
 use std::{str::FromStr, sync::Arc};
+use std::sync::Mutex;
 use tokio::sync::mpsc;
 use up_rust::{UListener, UMessage, UTransport, UUri};
 use up_transport_zenoh::UPTransportZenoh;
@@ -16,6 +16,7 @@ const CONFIG_PATH: &str = "src/zenoh_config.json";
 struct GuiUpdate {
     uri: String,
     payload: String,
+    value: f32,  // Extrahierter numerischer Wert
     timestamp: std::time::SystemTime,
 }
 
@@ -30,14 +31,19 @@ impl UListener for SubscriberListener {
 
         tokio::spawn(async move {
             let payload = msg.payload.unwrap();
-            let value = String::from_utf8(payload.to_vec()).unwrap();
+            let payload_str = String::from_utf8(payload.to_vec()).unwrap();
             let uri = msg.attributes.unwrap().source.unwrap().to_uri(false);
 
-            println!("Received message [topic: {uri}, payload: {value}]");
-            //println!("{}", value);
+            println!("Received message [topic: {uri}, payload: {payload_str}]");
+
+            // Extrahiere den numerischen Wert aus dem Payload
+            // Format: "event 32" -> 32
+            let value = extract_number_from_payload(&payload_str);
+
             let update = GuiUpdate {
                 uri,
-                payload: value,
+                payload: payload_str,
+                value,
                 timestamp: std::time::SystemTime::now(),
             };
 
@@ -46,11 +52,29 @@ impl UListener for SubscriberListener {
     }
 }
 
+// Hilfsfunktion zum Extrahieren der Zahl aus dem Payload
+fn extract_number_from_payload(payload: &str) -> f32 {
+    // Versuche zuerst, den kompletten String zu parsen
+    if let Ok(num) = payload.trim().parse::<f32>() {
+        return num;
+    }
+    
+    // Falls das nicht funktioniert, splitte bei Leerzeichen und parse jeden Teil
+    for part in payload.split_whitespace() {
+        if let Ok(num) = part.trim().parse::<f32>() {
+            return num;
+        }
+    }
+    
+    // Fallback: 0.0
+    0.0
+}
+
 struct DashboardApp {
     receiver: Arc<Mutex<mpsc::UnboundedReceiver<GuiUpdate>>>,
     messages: Vec<GuiUpdate>,
-    current_speed: f32,
-    current_rpm: f32,
+    current_value: f32,
+    max_value: f32,
 }
 
 impl DashboardApp {
@@ -58,24 +82,23 @@ impl DashboardApp {
         Self {
             receiver: Arc::new(Mutex::new(receiver)),
             messages: Vec::new(),
-            current_speed: 0.0,
-            current_rpm: 0.0,
+            current_value: 0.0,
+            max_value: 100.0,  // Standardwert, wird dynamisch angepasst
         }
     }
-
+    
     fn process_updates(&mut self) {
         if let Ok(mut rx) = self.receiver.lock() {
             while let Ok(update) = rx.try_recv() {
-                if let Ok(value) = update.payload.parse::<f32>() {
-                    if update.uri.contains("event") {
-                        self.current_speed = value;
-                    } else if update.uri.contains("rpm") {
-                        self.current_rpm = value;
-                    }
+                self.current_value = update.value;
+                
+                // Dynamisch den Maximalwert anpassen
+                if update.value > self.max_value {
+                    self.max_value = (update.value * 1.2).ceil();
                 }
-
+                
                 self.messages.push(update);
-
+                
                 if self.messages.len() > 100 {
                     self.messages.remove(0);
                 }
@@ -87,51 +110,60 @@ impl DashboardApp {
 impl eframe::App for DashboardApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.process_updates();
-
+        
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Vehicle Dashboard");
             ui.separator();
-
-            ui.horizontal(|ui| {
-                ui.vertical(|ui| {
-                    ui.heading("Speed");
-                    let gauge =
-                        Gauge::new(self.current_speed, 0.0..=200.0, 150.0, Color32::LIGHT_BLUE)
-                            .text("km/h");
-                    ui.add(gauge);
-                });
-
-                ui.separator();
-
-                ui.vertical(|ui| {
-                    ui.heading("RPM");
-                    let gauge =
-                        Gauge::new(self.current_rpm, 0.0..=8000.0, 150.0, Color32::LIGHT_RED)
-                            .text("RPM");
-                    ui.add(gauge);
-                });
+            
+            // Großer Gauge für den aktuellen Wert
+            ui.vertical_centered(|ui| {
+                ui.heading("Current Value");
+                ui.add_space(10.0);
+                
+                let gauge = Gauge::new(self.current_value, 0.0..=self.max_value, 200.0, Color32::from_rgb(100, 200, 255))
+                    .text(&format!("{:.0}", self.current_value));
+                ui.add(gauge);
+                
+                ui.add_space(10.0);
+                ui.label(format!("Value: {:.1}", self.current_value));
             });
-
+            
             ui.separator();
-
+            
+            // Message Log
             ui.heading("Recent Messages");
-            ui.label(format!("Total messages: {}", self.messages.len()));
+            ui.label(format!("Total messages received: {}", self.messages.len()));
+            
             egui::ScrollArea::vertical()
                 .max_height(200.0)
                 .show(ui, |ui| {
                     if self.messages.is_empty() {
                         ui.label("Waiting for messages...");
                     }
-                    for msg in self.messages.iter().rev().take(20) {
-                        ui.horizontal(|ui| {
-                            ui.label(&msg.uri);
-                            ui.separator();
-                            ui.label(&msg.payload);
+                    
+                    egui::Grid::new("message_grid")
+                        .striped(true)
+                        .show(ui, |ui| {
+                            ui.label("Topic");
+                            ui.label("Payload");
+                            ui.label("Value");
+                            ui.label("Time");
+                            ui.end_row();
+                            
+                            for msg in self.messages.iter().rev().take(20) {
+                                ui.label(&msg.uri);
+                                ui.label(&msg.payload);
+                                ui.label(format!("{:.1}", msg.value));
+                                
+                                if let Ok(elapsed) = msg.timestamp.elapsed() {
+                                    ui.label(format!("{:.1}s ago", elapsed.as_secs_f32()));
+                                }
+                                ui.end_row();
+                            }
                         });
-                    }
                 });
         });
-
+        
         ctx.request_repaint();
     }
 }
@@ -141,7 +173,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let (gui_tx, gui_rx) = mpsc::unbounded_channel::<GuiUpdate>();
 
-    // Tokio Runtime im separaten Thread - OHNE block_on auf Ctrl+C
     let _tokio_handle = std::thread::Builder::new()
         .name("tokio-runtime".to_string())
         .spawn(move || {
@@ -151,7 +182,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .build()
                 .expect("Failed to create Tokio runtime");
 
-            // Spawne den Setup-Task und halte Runtime am Leben
             rt.block_on(async move {
                 UPTransportZenoh::try_init_log_from_env();
 
@@ -182,41 +212,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     .register_listener(
                         &source_filter,
                         None,
-                        Arc::new(SubscriberListener { gui_sender: gui_tx }),
+                        Arc::new(SubscriberListener {
+                            gui_sender: gui_tx,
+                        }),
                     )
                     .await
                     .expect("Failed to register listener");
 
                 println!("Listener registered successfully!");
 
-                // Debug-Task zum Testen
-                tokio::spawn(async {
-                    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(5));
-                    loop {
-                        interval.tick().await;
-                        println!("[DEBUG] Tokio runtime is active and running...");
-                    }
-                });
-
-                // Halte Runtime am Leben - warte ENDLOS statt auf Ctrl+C
-                // Die Runtime bleibt aktiv bis der Thread beendet wird (GUI schließt)
                 loop {
                     tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
                 }
             });
         })?;
 
-    // Gib der Runtime Zeit zum Starten
     std::thread::sleep(std::time::Duration::from_millis(500));
 
-    // GUI im Main-Thread starten
     let native_options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([800.0, 600.0])
             .with_title("Zenoh Vehicle Dashboard"),
         ..Default::default()
     };
-
+    
     let _ = eframe::run_native(
         "Zenoh Dashboard",
         native_options,
