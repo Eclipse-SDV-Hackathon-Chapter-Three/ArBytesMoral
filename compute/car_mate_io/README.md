@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 # CarMate – Speech-to-Text (STT) & Text-to-Speech (TTS) Demo
 ##  build
 `docker build -t car_mate_io:latest .`

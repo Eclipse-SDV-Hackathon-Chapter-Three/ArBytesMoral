@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 # Compute Node
 
 This document provides an overview of the compute node in the context of the SDV Lab Challenge.

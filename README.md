@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 # ArBytesMoral
 
 # 1. Your Team at a Glance
@@ -149,3 +150,21 @@ Additionally, on-demand 1:1 discussions are initiated whenever necessary to reso
 ## Decision Making  
 
 Our team strives to achieve decisions through consensus, ensuring that all voices are heard and a common agreement is reached. However, if consensus cannot be achieved within the limited time available, we resolve decisions through a democratic vote.
+
+## 🧩 License
+
+Licensed under the [Apache License 2.0](LICENSE).  
+SPDX-License-Identifier: Apache-2.0
+
+## 🤝 Contributing
+
+Please see [CONTRIBUTING.md](CONTRIBUTING.md) and ensure compliance with the
+[Eclipse Contributor Agreement (ECA)](https://www.eclipse.org/legal/ECA.php).
+
+## 📄 Notice
+
+See [NOTICE](NOTICE).
+
+## © Copyright
+
+Copyright (c) 2025 Eclipse Foundation and others.
