@@ -1,10 +1,14 @@
 #!/bin/bash
 
+sudo podman kill -a
+
 # List of workloads to delete in the desired order
 WORKLOADS=(
   Ankaios_Dashboard
   carlaprovider
   vehilceDataAccessor
+  CarMateAgents
+  CarMateIO
   mqtt2kuksa
   mqtt
   databroker

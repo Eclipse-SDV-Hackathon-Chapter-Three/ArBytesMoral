@@ -1,24 +1,12 @@
-// Copyright (c) 2025 Elektrobit Automotive GmbH
-//
-// This program and the accompanying materials are made available under the
-// terms of the Apache License, Version 2.0 which is available at
-// https://www.apache.org/licenses/LICENSE-2.0.
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-// WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-// License for the specific language governing permissions and limitations
-// under the License.
-//
-// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2025 CarByte Engineering GmbH
 
-use paho_mqtt::{self as mqtt};
-use tokio::sync::mpsc;
-use std::time::Duration;
 use kuksa_rust_sdk::kuksa::common::ClientTraitV2;
 use kuksa_rust_sdk::kuksa::val::v2::KuksaClientV2;
 use kuksa_rust_sdk::v2_proto;
+use paho_mqtt::{self as mqtt};
 use std::fmt;
+use std::time::Duration;
+use tokio::sync::mpsc;
 
 struct DisplayDatapoint(v2_proto::Value);
 
@@ -64,13 +52,12 @@ impl fmt::Display for DisplayDatapoint {
 }
 
 fn vec_u8_to_f32_from_string(bytes: Vec<u8>) -> f32 {
-    let s = str::from_utf8(&bytes).unwrap_or("");  // Convert, default empty string on error
-    s.trim().parse().unwrap_or(0.0)                // Parse float, return 0.0 on error
+    let s = str::from_utf8(&bytes).unwrap_or(""); // Convert, default empty string on error
+    s.trim().parse().unwrap_or(0.0) // Parse float, return 0.0 on error
 }
 
 #[tokio::main]
 async fn main() {
-
     // Assumption:
     // - Started after MQTT Broker and Kuksa Data broker
     // --> This is achieved with ankaios configuration
@@ -108,12 +95,16 @@ async fn main() {
         match rx.try_recv() {
             Ok(msg) => {
                 println!("Got message: {:?}", msg);
-                let _ =v2_client.publish_value(
-                    "Vehicle.Cabin.HVAC.AmbientAirTemperature".to_owned(),
-                    v2_proto::Value {
-                        typed_value: Some(v2_proto::value::TypedValue::Float(vec_u8_to_f32_from_string(msg))),
-                    },
-                ).await;
+                let _ = v2_client
+                    .publish_value(
+                        "Vehicle.Cabin.HVAC.AmbientAirTemperature".to_owned(),
+                        v2_proto::Value {
+                            typed_value: Some(v2_proto::value::TypedValue::Float(
+                                vec_u8_to_f32_from_string(msg),
+                            )),
+                        },
+                    )
+                    .await;
             }
             Err(tokio::sync::mpsc::error::TryRecvError::Empty) => {
                 // No message available now, but sender is still active
@@ -124,18 +115,27 @@ async fn main() {
             }
         }
 
-        let result = v2_client.get_value("Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide.Color".to_owned()).await;
+        let result = v2_client
+            .get_value("Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide.Color".to_owned())
+            .await;
         match result {
             Ok(option) => match option {
                 Some(datapoint) => {
-                    println!("Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide.Color: {:?}", datapoint.value);
+                    println!(
+                        "Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide.Color: {:?}",
+                        datapoint.value
+                    );
                     match datapoint.value {
                         Some(value) => {
                             let printable = DisplayDatapoint(value);
                             //println!("Got value for Vehicle.Cabin.Light.AmbientLight.Row1.DriverSide.Color: {:?}", response);
-                            let msg = mqtt::Message::new("compute/color", printable.to_string(), mqtt::QOS_1);
+                            let msg = mqtt::Message::new(
+                                "compute/color",
+                                printable.to_string(),
+                                mqtt::QOS_1,
+                            );
                             let _ = mqtt_client.publish(msg).await;
-                        },
+                        }
                         None => {
                             let msg = mqtt::Message::new("compute/color", "0", mqtt::QOS_1);
                             let _ = mqtt_client.publish(msg).await;
