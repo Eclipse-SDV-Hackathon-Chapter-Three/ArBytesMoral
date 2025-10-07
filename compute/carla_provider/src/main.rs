@@ -1,8 +1,8 @@
 // Copyright (c) 2025 CarByte Engineering GmbH
 
 use std::sync::{
-    atomic::{AtomicBool, Ordering},
     Arc,
+    atomic::{AtomicBool, Ordering},
 };
 use std::time::Duration;
 
@@ -38,7 +38,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     // Connect to CARLA
-    log::info!("Connecting to the CARLA server at {}:{}…", CARLA_HOST, CARLA_PORT);
+    log::info!(
+        "Connecting to the CARLA server at {}:{}…",
+        CARLA_HOST,
+        CARLA_PORT
+    );
     let mut carla_client = Client::connect(CARLA_HOST, CARLA_PORT, None);
     carla_client.set_timeout(Duration::from_millis(CLIENT_TIME_MS));
 
@@ -71,7 +75,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .try_into()
                 .expect("Spawned actor is not a vehicle (check blueprint)");
             vehicle.set_autopilot_opt(true, TM_PORT);
-            log::info!("Vehicle spawned and autopilot enabled on TM port {}", TM_PORT);
+            log::info!(
+                "Vehicle spawned and autopilot enabled on TM port {}",
+                TM_PORT
+            );
         } else {
             log::error!("Vehicle blueprint not found");
         }
