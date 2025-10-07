@@ -4,11 +4,13 @@ The **CARLA Provider** demonstrates a practical bridge between CARLA and KUKSA D
 
 ## Feature #1
 
-Talks to CARLA: connects, spawns a vehicle, enables autopilot, and steps the sim every 50 ms.
+Sets up CARLA simulation: connects, spawns a vehicle, enables autopilot, manipulates weather conditions and steps the sim every 50 ms.
 
 ## Feature #2
 
 Reads CARLA weather wetness and maps it to the VSS signal Vehicle.Exterior.Humidity. Publishes Vehicle.Exterior.Humidity to the KUKSA Databroker once per second (non-blocking).
+Reads CARLA vehicle velocity and maps it to the VSS signal Vehicle.Speed. Publishes Vehicle.Speed to the KUKSA Databroker once per second (non-blocking).
+Reads CARLA GNSS location and maps it to the VSS signals Vehicle.CurrentLocation.(Longitude, Latitude, Altitude). Publishes Vehicle.CurrentLocation.(Longitude, Latitude, Altitude) to the KUKSA Databroker once per second (non-blocking).
 
 ## Feature #3
 
