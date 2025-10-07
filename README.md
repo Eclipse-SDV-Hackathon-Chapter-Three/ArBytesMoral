@@ -8,14 +8,14 @@ ArBytesMoral – Mastering Every Byte with Passion, Dedication, and Team Spirit!
 ![Team Logo](img/ArBytesMoral.jpg)
 
 ## Team Members  
-| Name                   | GitHub Handle      | Role(s)                |
-|------------------------|--------------------|------------------------|
-| **Christopher Schwager** | `@cr1sschwager` | `Developer - Architecture / Pitch`   |
-| **Nico Renner**        | `@RennerEngineering` | `Developer - TTS/STT / Pitch` |
-| **Gabriel Böhn**       | `@gabriel-CBE` | `Developer - MCU` |
-| **Daniel Gerstle**     | `@gdaniel-cb` | `Developer - Carla`  |
-| **Jan Franck**         | `@Bert-Tec` | `Developer - LLM Integration`    |
 
+| Name                   | GitHub Handle         | Role(s)                          | Email                              |
+|------------------------|-----------------------|----------------------------------|------------------------------------|
+| **Christopher Schwager** | `@cr1sschwager`      | Developer - Architecture / Pitch | christopher.schwager@carbyte.de   |
+| **Nico Renner**        | `@RennerEngineering`  | Developer - TTS/STT / Pitch      |                                    |
+| **Gabriel Böhn**       | `@gabriel-CBE`        | Developer - MCU                  |                                    |
+| **Daniel Gerstle**     | `@gdaniel-cb`         | Developer - Carla                |                                    |
+| **Jan Franck**         | `@Bert-Tec`           | Developer - LLM Integration      |                                    |
 
 ## Challenge  
 SDV Lab Challange
