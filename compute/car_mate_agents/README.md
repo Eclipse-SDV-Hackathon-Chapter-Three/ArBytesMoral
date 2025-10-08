@@ -1,3 +1,4 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
 # CarMateAgents
 ##  build
 `docker build -t car_mate_agents:latest .`

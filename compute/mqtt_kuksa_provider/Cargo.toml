@@ -1,7 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
 [package]
 name = "app"
 edition = "2024"
 license = "Apache-2.0"
+license-file = "../../LICENSE"
+authors = ["Eclipse Foundation and others"]
 
 [dependencies]
 #ankaios_sdk = "0.6.0"

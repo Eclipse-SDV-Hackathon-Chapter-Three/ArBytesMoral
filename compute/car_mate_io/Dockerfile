@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm as base
 
 WORKDIR /app

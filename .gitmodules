@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 [submodule "mcu_sw/threadx-rust"]
 	path = mcu_sw/threadx-rust
 	url = git@github.com:gabriel-CBE/threadx-rust.git

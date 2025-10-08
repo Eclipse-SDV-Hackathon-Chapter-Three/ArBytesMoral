@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 # FROM docker.io/alpine:3.18.4 as compile
 # ENV PATH="/root/.cargo/bin:${PATH}"
 
