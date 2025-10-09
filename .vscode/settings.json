@@ -2,7 +2,5 @@
     "rust-analyzer.linkedProjects": [
         "mcu_sw/threadx-rust/Cargo.toml",
         "mcu_sw/threadx-rust/threadx-app/cross/Cargo.toml",
-        "mcu_new/threadx-rust/Cargo.toml",
-        "mcu_new/threadx-rust/threadx-app/cross/Cargo.toml",
     ]
 }
