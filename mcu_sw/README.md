@@ -3,7 +3,8 @@
 
 ## Overview
 
-This embedded Rust application runs on the MxChip IoT DevKit, implementing a real-time IoT sensor node using Azure RTOS ThreadX. The system automatically measures environmental data and communicates via MQTT over WiFi. Simultaneously it receives a RGB value via MQTT and sets the integrated LED
+This embedded Rust application runs on the MxChip IoT DevKit, implementing a real-time IoT sensor node using Azure RTOS ThreadX. The system automatically measures environmental data and communicates via MQTT over WiFi. Simultaneously it receives a RGB value via MQTT and sets the integrated LED.
+It's based on the threadx-rust repository, provided for the _Eclipse SDV Hackathon 2025_ with added drivers, to control the LED on the board.
 
 ## Features
 
@@ -38,20 +39,6 @@ This embedded Rust application runs on the MxChip IoT DevKit, implementing a rea
 - Message counter display (sent/received)
 - Last received/sent message preview
 - Button-triggered emergency messaging
-
-
-## System Architecture
-
-```
-┌─────────────────┐    ┌──────────────────┐
-│ Measurement     │    │ Network          │
-│ Thread          │───▶│ Thread           │
-│ - Read sensor   │    │ - WiFi/MQTT      │
-│ - Send to queue │    │ - Display update │
-└─────────────────┘    │ - LED control    │
-                       └──────────────────┘
-```
-
 
 ## Configuration
 
@@ -90,25 +77,3 @@ To build and run this project, navigate to the directory `threadx-rust/threadx-a
 - **ThreadX-rs**: Rust bindings for ThreadX API
 
 This system demonstrates modern embedded IoT development combining Rust's safety guarantees with real-time operating system capabilities for reliable sensor data collection and wireless communication.
-<span style="display:none">[^1][^2][^3][^4][^5][^6][^7][^8][^9]</span>
-
-<div align="center">⁂</div>
-
-[^1]: https://docs.rs/homie-controller
-
-[^2]: https://docs.rs/color-parser
-
-[^3]: https://docs.esp-rs.org/std-training/03_5_3_mqtt.html
-
-[^4]: https://crates.io/crates/mqtt-analyzer/dependencies
-
-[^5]: https://github.com/seancroach/hex_color
-
-[^6]: https://community.openhab.org/t/solved-mqtt-esphome-color-channel-integration/141824
-
-[^7]: https://www.tinkerforge.com/en/doc/Software/API_Bindings_MQTT.html
-
-[^8]: https://dev.to/emqx/how-to-use-mqtt-in-rust-5fne
-
-[^9]: https://crates.io/crates/csscolorparser
-
